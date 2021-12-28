@@ -49,7 +49,7 @@ while True:
                     buy_order = client.create_order(symbol='ZILUSDT', side='SELL', type='MARKET', quantity=130)
             else:
                 if float(client.get_asset_balance('USDT')['free']) > 10:
-                    buy_order = client.create_order(symbol='ZILUSDT', side='BUY', type='MARKET', quantity=10.40)
+                    buy_order = client.create_order(symbol='ZILUSDT', side='BUY', type='MARKET', quantity=130) #quantity in zil?
         except BinanceAPIException as e:
             print(e)
         except BinanceOrderException as e:
