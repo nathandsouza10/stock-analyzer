@@ -17,13 +17,13 @@ from sklearn import linear_model
 previous_time = time.time()
 
 while True:
-    if time.time() > previous_time + (60*5):
+    if time.time() > previous_time + (60*30):
         client = Client('zCVkQpBCxx9emHAjkhFXQRsz6PGdWPwLL9zT4UfkdL5D6HTXpiWaOFZULfqaci9M'
                         , 'xsP3n0q5GPvsL2N0WcdeSlznkTs8iQkNydusMKCrquSIlI2aXet9cKwyYvAFNk1R')
 
         print(client.get_asset_balance(asset='ZIL'))
         print(client.get_asset_balance(asset='USDT'))
-        klines = client.get_historical_klines("ZILUSDT", Client.KLINE_INTERVAL_1MINUTE, "15 minutes ago GMT")
+        klines = client.get_historical_klines("ZILUSDT", Client.KLINE_INTERVAL_1MINUTE, "30 minutes ago GMT")
 
         prices = [float(x[4]) for x in klines]
         times = [x[6] for x in klines]
