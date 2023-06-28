@@ -1,56 +1,99 @@
-import time
-import matplotlib.pyplot as plt
+import pandas
 import numpy as np
-from binance import Client
-from binance.exceptions import BinanceAPIException, BinanceOrderException
-from sklearn import linear_model
+import pandas as pd
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import random
+
+import streamlit as st
+from models import LSTM
+from alpaca.data.historical import CryptoHistoricalDataClient
+from alpaca.data.requests import CryptoBarsRequest
+from alpaca.data.timeframe import TimeFrame
+from datetime import datetime
+from utils import split_data
+
+from sklearn.preprocessing import MinMaxScaler
+
+device = ('cuda' if torch.cuda.is_available() else 'cpu')
+st.write("running on :", device)
+np.random.seed(42)
+torch.manual_seed(42)
+random.seed(42)
+
+st.title("Trading Bot (Day-to-Day)")
+
+client = CryptoHistoricalDataClient()
+request_params = CryptoBarsRequest(
+                        symbol_or_symbols=["BTC/USD", "ETH/USD", "DAI/USD", "GRT/USD", "BTC/USD", "LINK/USD", "SHIB/USD"],
+                        timeframe=TimeFrame.Day,
+                        start=datetime(1600, 7, 1), #ridiculous datetime chosen to get earliest possible stock price
+                        end=datetime(2022, 9, 1)
+                 )
+
+bars = client.get_crypto_bars(request_params)
+if "visibility" not in st.session_state:
+    st.session_state.visibility = "visible"
+    st.session_state.disabled = False
+
+option = st.selectbox(
+        "Symbol",
+        ("BTC/USD", "ETH/USD", "DAI/USD", "GRT/USD", "LINK/USD"),
+        label_visibility=st.session_state.visibility,
+        disabled=st.session_state.disabled,
+    )
+with st.spinner("gathering data..."):
+    data = bars.df.loc[option]
+    price = data[['close']]
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    price['close'] = scaler.fit_transform(price['close'].values.reshape(-1, 1))
+    st.line_chart(price)
 
 
-# # real_account
-# client = Client('zCVkQpBCxx9emHAjkhFXQRsz6PGdWPwLL9zT4UfkdL5D6HTXpiWaOFZULfqaci9M'
-#                 , 'xsP3n0q5GPvsL2N0WcdeSlznkTs8iQkNydusMKCrquSIlI2aXet9cKwyYvAFNk1R')
-# # practice_account
-# client = Client('3zjhWnEBC0lBlfOeYxgnrGBQlnJj3Ci7ppnQnCC1v9CGQ7HqwnQlbXlKETZAZWUC'
-#                 , 'XM52kHHwBiC8r88EFITS5WLVIMOOU1kHMcpLNV9EPgQHn69ctoY0uAIAWBQKmWfM')
-# client.API_URL = 'https://testnet.binance.vision/api'
+lookback = 10
+x_train, y_train, x_test, y_test = split_data(price, lookback, test_size=0.25)
+x_train = torch.from_numpy(x_train).type(torch.Tensor).to(device)
+x_test = torch.from_numpy(x_test).type(torch.Tensor).to(device)
+y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(device)
+y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(device)
 
-previous_time = time.time()
+with st.expander("LSTM Evaluation"):
+    with st.spinner("calculating trends..."):
+        num_epochs = 1500
+        model = LSTM(input_dim=1, hidden_dim=32, output_dim=1, num_layers=3)
+        model = model.to(device)
+        criterion = torch.nn.MSELoss()
+        optimiser = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
-while True:
-    if time.time() > previous_time + (60*30):
-        client = Client('zCVkQpBCxx9emHAjkhFXQRsz6PGdWPwLL9zT4UfkdL5D6HTXpiWaOFZULfqaci9M'
-                        , 'xsP3n0q5GPvsL2N0WcdeSlznkTs8iQkNydusMKCrquSIlI2aXet9cKwyYvAFNk1R')
+        hist = np.zeros(num_epochs)
+        for t in range(num_epochs):
+            y_train_pred = model(x_train)
+            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm)) #RMSE
+            hist[t] = loss.item()
+            optimiser.zero_grad()
+            loss.backward()
+            optimiser.step()
 
-        print(client.get_asset_balance(asset='ZIL'))
-        print(client.get_asset_balance(asset='USDT'))
-        klines = client.get_historical_klines("ZILUSDT", Client.KLINE_INTERVAL_1MINUTE, "30 minutes ago GMT")
+        with torch.no_grad():
+            y_pred = model(x_test)
 
-        prices = [float(x[4]) for x in klines]
-        times = [x[6] for x in klines]
-        times = [[int(x)] for x in times]
-        prices = [float(x) for x in prices]
+        st.write(f"RMSE Loss against epochs (last loss: {round(hist[-1], 6)})")
+        loss_chart = pd.DataFrame()
+        loss_chart['loss'] = hist
+        loss_chart.reset_index(drop=True)
+        st.line_chart(loss_chart, use_container_width=True)
 
-        model = linear_model.LinearRegression()
-        model.fit(times, prices)
-
-        print('coefficient', model.coef_)
-        print('intercept', model.intercept_)
-
-        # x = np.linspace(times[0], times[-1])
-        # y = (model.coef_ * x) + model.intercept_
-        # plt.scatter(times, prices)
-        # plt.plot(x, y, color='green')
-        # plt.show()
-        previous_time = time.time()
-
-        try:
-            if model.coef_ > 0:
-                if float(client.get_asset_balance('ZIL')['free']) >= 130:
-                    buy_order = client.create_order(symbol='ZILUSDT', side='SELL', type='MARKET', quantity=130)
-            else:
-                if float(client.get_asset_balance('USDT')['free']) > 10:
-                    buy_order = client.create_order(symbol='ZILUSDT', side='BUY', type='MARKET', quantity=130) #quantity in zil?
-        except BinanceAPIException as e:
-            print(e)
-        except BinanceOrderException as e:
-            print(e)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("Train")
+            chart_data = pd.DataFrame()
+            chart_data['y_train'] = np.squeeze(y_train)
+            chart_data['y_train_pred'] = torch.squeeze(y_train_pred.cpu().detach())
+            st.line_chart(chart_data, use_container_width=True)
+        with col2:
+            st.write("Test")
+            chart_data = pd.DataFrame()
+            chart_data['y_train'] = np.squeeze(y_test)
+            chart_data['y_train_pred'] = torch.squeeze(y_pred.cpu().detach())
+            st.line_chart(chart_data, use_container_width=True)
