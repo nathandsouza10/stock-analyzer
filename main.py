@@ -17,6 +17,9 @@ from utils import split_data
 from sklearn.preprocessing import MinMaxScaler
 
 device = ('cuda' if torch.cuda.is_available() else 'cpu')
+
+st.set_page_config(layout="wide")
+
 st.write("running on :", device)
 np.random.seed(42)
 torch.manual_seed(42)
@@ -76,7 +79,7 @@ with st.expander("LSTM Evaluation"):
             optimiser.step()
 
         with torch.no_grad():
-            y_pred = model(x_test)
+            y_test_pred = model(x_test)
 
         st.write(f"RMSE Loss against epochs (last loss: {round(hist[-1], 6)})")
         loss_chart = pd.DataFrame()
@@ -94,6 +97,6 @@ with st.expander("LSTM Evaluation"):
         with col2:
             st.write("Test")
             chart_data = pd.DataFrame()
-            chart_data['y_train'] = np.squeeze(y_test)
-            chart_data['y_train_pred'] = torch.squeeze(y_pred.cpu().detach())
+            chart_data['y_test'] = np.squeeze(y_test)
+            chart_data['y_test_pred'] = torch.squeeze(y_test_pred.cpu().detach())
             st.line_chart(chart_data, use_container_width=True)
