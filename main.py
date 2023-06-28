@@ -63,7 +63,7 @@ y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(device)
 
 with st.expander("LSTM Evaluation"):
     with st.spinner("calculating trends..."):
-        num_epochs = 1500
+        num_epochs = 1000
         model = LSTM(input_dim=1, hidden_dim=32, output_dim=1, num_layers=3)
         model = model.to(device)
         criterion = torch.nn.MSELoss()
