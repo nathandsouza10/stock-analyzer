@@ -61,7 +61,7 @@ x_test = torch.from_numpy(x_test).type(torch.Tensor).to(device)
 y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(device)
 y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(device)
 
-with st.expander("LSTM Evaluation"):
+with st.expander("LSTM Evaluation", expanded=True):
     with st.spinner("calculating trends..."):
         num_epochs = 1000
         model = LSTM(input_dim=1, hidden_dim=32, output_dim=1, num_layers=3)
