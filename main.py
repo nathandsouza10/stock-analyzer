@@ -31,8 +31,8 @@ client = CryptoHistoricalDataClient()
 request_params = CryptoBarsRequest(
                         symbol_or_symbols=["BTC/USD", "ETH/USD", "DAI/USD", "GRT/USD", "BTC/USD", "LINK/USD", "SHIB/USD"],
                         timeframe=TimeFrame.Day,
-                        start=datetime(1600, 7, 1), #ridiculous datetime chosen to get earliest possible stock price
-                        end=datetime(2022, 9, 1)
+                        start=datetime(1600, 7, 1), #ridiculous datetime chosen to get earliest and latest possible stock price
+                        end=datetime(2030, 9, 1)
                  )
 
 bars = client.get_crypto_bars(request_params)
