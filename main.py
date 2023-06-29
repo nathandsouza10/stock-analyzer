@@ -44,7 +44,7 @@ if "visibility" not in st.session_state:
 
 option = st.selectbox(
         "Symbol",
-        ("BTC/USD", "ETH/USD", "DAI/USD", "GRT/USD", "LINK/USD"),
+        STOCKS,
         label_visibility=st.session_state.visibility,
         disabled=st.session_state.disabled,
     )
@@ -114,7 +114,7 @@ for stock in STOCKS:
 log_returns = np.log(closing_price_df / closing_price_df.shift(1))
 portfolio_returns = []
 portfolio_volatilities = []
-for x in range(1000):
+for x in range(2000):
     weights = np.random.random(len(STOCKS))
     weights /= np.sum(weights)
     portfolio_returns.append(np.sum(weights * log_returns.mean()) * 365)
@@ -124,15 +124,15 @@ portfolio_returns = np.array(portfolio_returns)
 portfolio_volatilities = np.array(portfolio_volatilities)
 
 portfolios = pd.DataFrame({'Return': portfolio_returns, 'Volatility': portfolio_volatilities})
-st.subheader("modern portfolio theory")
+st.subheader("Modern Portfolio Theory")
 
 col1, col2 = st.columns(2)
 with col1:
-    st.write("portfolio data")
+    st.write("Portfolio Data")
     st.dataframe(portfolios, use_container_width=True)
 
 with col2:
-    st.write("portfolio graph")
+    st.write("Portfolio Graph")
     chart = alt.Chart(portfolios).mark_circle().encode(
         x='Volatility',
         y='Return'
