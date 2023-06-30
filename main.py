@@ -31,11 +31,11 @@ st.title("Trading Bot (Day-to-Day)")
 client = CryptoHistoricalDataClient()
 STOCKS = ["BTC/USD", "ETH/USD", "LINK/USD", "SHIB/USD"]
 request_params = CryptoBarsRequest(
-                        symbol_or_symbols=STOCKS,
-                        timeframe=TimeFrame.Day,
-                        start=datetime(1600, 7, 1), #ridiculous datetime chosen to get earliest and latest possible stock price
-                        end=datetime(2030, 9, 1)
-                 )
+    symbol_or_symbols=STOCKS,
+    timeframe=TimeFrame.Day,
+    start=datetime(1600, 7, 1),  # ridiculous datetime chosen to get earliest and latest possible stock price
+    end=datetime(2030, 9, 1)
+)
 
 bars = client.get_crypto_bars(request_params)
 if "visibility" not in st.session_state:
@@ -43,18 +43,17 @@ if "visibility" not in st.session_state:
     st.session_state.disabled = False
 
 option = st.selectbox(
-        "Symbol",
-        STOCKS,
-        label_visibility=st.session_state.visibility,
-        disabled=st.session_state.disabled,
-    )
+    "Symbol",
+    STOCKS,
+    label_visibility=st.session_state.visibility,
+    disabled=st.session_state.disabled,
+)
 with st.spinner("gathering data..."):
     data = bars.df.loc[option]
     price = data[['close']]
     scaler = MinMaxScaler(feature_range=(0, 1))
     price['close'] = scaler.fit_transform(price['close'].values.reshape(-1, 1))
     st.line_chart(price)
-
 
 lookback = 10
 x_train, y_train, x_test, y_test = split_data(price, lookback, test_size=0.25)
@@ -75,7 +74,7 @@ with st.expander("LSTM Evaluation", expanded=True):
         hist = np.zeros(num_epochs)
         for t in range(num_epochs):
             y_train_pred = model(x_train)
-            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm)) #RMSE
+            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm))  # RMSE
             hist[t] = loss.item()
             optimiser.zero_grad()
             loss.backward()
@@ -105,31 +104,43 @@ with st.expander("LSTM Evaluation", expanded=True):
             st.line_chart(chart_data, use_container_width=True)
 
 
+@st.cache_data
+def get_modern_portfolio():
+    closing_price_df = pd.DataFrame()
+    for stock in STOCKS:
+        closing_price_df[stock] = bars.df.loc[stock]['close']
+
+    log_returns = np.log(closing_price_df / closing_price_df.shift(1))
+    portfolio_returns = []
+    portfolio_volatilities = []
+    weights_list = []
+    for x in range(2000):
+        weights = np.random.random(len(STOCKS))
+        weights /= np.sum(weights)
+        weights_list.append(weights)
+        portfolio_returns.append(np.sum(weights * log_returns.mean()) * 365)
+        portfolio_volatilities.append(np.sqrt(np.dot(weights.T, np.dot(log_returns.cov() * 365, weights))))
+
+    portfolio_returns = np.array(portfolio_returns)
+    portfolio_volatilities = np.array(portfolio_volatilities)
+
+    portfolios = pd.DataFrame({'Return': portfolio_returns, 'Volatility': portfolio_volatilities})
+    return portfolios, weights_list
 
 
-closing_price_df = pd.DataFrame()
-for stock in STOCKS:
-    closing_price_df[stock] = bars.df.loc[stock]['close']
-
-log_returns = np.log(closing_price_df / closing_price_df.shift(1))
-portfolio_returns = []
-portfolio_volatilities = []
-for x in range(2000):
-    weights = np.random.random(len(STOCKS))
-    weights /= np.sum(weights)
-    portfolio_returns.append(np.sum(weights * log_returns.mean()) * 365)
-    portfolio_volatilities.append(np.sqrt(np.dot(weights.T, np.dot(log_returns.cov() * 365, weights))))
-
-portfolio_returns = np.array(portfolio_returns)
-portfolio_volatilities = np.array(portfolio_volatilities)
-
-portfolios = pd.DataFrame({'Return': portfolio_returns, 'Volatility': portfolio_volatilities})
 st.subheader("Modern Portfolio Theory")
+portfolios, weights_list = get_modern_portfolio()
 
 col1, col2 = st.columns(2)
 with col1:
-    st.write("Portfolio Data")
-    st.dataframe(portfolios, use_container_width=True)
+    st.write("Minimum volatility portfolio")
+    min_volatility_df = portfolios[portfolios['Volatility'] == min(portfolios['Volatility'])]
+    st.dataframe( min_volatility_df, use_container_width=True)
+    optimal_weightings_df = pd.DataFrame()
+    for i, stock in enumerate(STOCKS):
+        optimal_weightings_df[stock] = [weights_list[min_volatility_df.index[0]][i]]
+    st.dataframe(optimal_weightings_df, use_container_width=True)
+
 
 with col2:
     st.write("Portfolio Graph")
@@ -138,4 +149,3 @@ with col2:
         y='Return'
     ).interactive()
     st.altair_chart(chart, theme="streamlit", use_container_width=True)
-
