@@ -4,6 +4,7 @@ import torch.nn as nn
 device = ('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
+
 class LSTM(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_layers, output_dim):
         super(LSTM, self).__init__()
