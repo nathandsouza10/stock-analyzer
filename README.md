@@ -1,1 +1,1 @@
-# trading_bot
+# stock analyzer
