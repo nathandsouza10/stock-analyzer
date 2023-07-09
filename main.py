@@ -1,3 +1,5 @@
+import alpaca.data
+
 import pandas
 import numpy as np
 import pandas as pd
@@ -26,21 +28,28 @@ np.random.seed(42)
 torch.manual_seed(42)
 random.seed(42)
 
-st.title("Trading Bot")
+st.title("Stock Analyzer")
+with st.expander("Menu"):
+    STOCKS = st.multiselect(
+        'Choose stock option(s)',
+        ["BTC/USD", "ETH/USD", "LINK/USD", "SHIB/USD", "BCH/USD"],
+        ["BTC/USD"]
+    )
+    TIMEFRAME = st.selectbox("Choose timeframe:", [TimeFrame.Hour, TimeFrame.Day])
 
 with st.spinner("Loading data from alpaca"):
     client = CryptoHistoricalDataClient()
-    STOCKS = ["BTC/USD", "ETH/USD", "LINK/USD", "SHIB/USD", "BCH/USD"]
     request_params = CryptoBarsRequest(
         symbol_or_symbols=STOCKS,
-        timeframe=TimeFrame.Hour,
+        timeframe=TIMEFRAME,
         start=datetime(1600, 7, 1),  # ridiculous datetime chosen to get earliest and latest possible stock price
         end=datetime(3030, 9, 1)
     )
 
     bars = client.get_crypto_bars(request_params)
+st.success("Completed: Loading Data")
 
-st.subheader("Models")
+st.subheader("Stock Evaluation")
 
 model_eval_df = pd.DataFrame()
 with st.spinner("performing model evaluation"):
@@ -49,7 +58,7 @@ with st.spinner("performing model evaluation"):
         price = data[['close']]
         scaler = MinMaxScaler(feature_range=(0, 1))
         price['close'] = scaler.fit_transform(price['close'].values.reshape(-1, 1))
-        lookback = 20
+        lookback = 10
         x_train, y_train, x_test, y_test = split_data(price, lookback, test_size=0.25)
         x_train = torch.from_numpy(x_train).type(torch.Tensor).to(device)
         x_test = torch.from_numpy(x_test).type(torch.Tensor).to(device)
@@ -57,7 +66,7 @@ with st.spinner("performing model evaluation"):
         y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(device)
 
         num_epochs = 1000
-        model = LSTM(input_dim=1, hidden_dim=32, output_dim=1, num_layers=3)
+        model = LSTM(input_dim=1, hidden_dim=32, output_dim=1, num_layers=2)
         model = model.to(device)
         criterion = torch.nn.MSELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
