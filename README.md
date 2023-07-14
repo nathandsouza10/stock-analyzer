@@ -34,3 +34,5 @@ pip install -r requirements.txt
 The script retrieves historical data for the selected stocks using the Alpaca API. The data is preprocessed and split into training and test sets. An LSTM model is then trained on the training data to predict stock prices. The trained model is used to make predictions on the test data and the results are evaluated.
 
 The script also includes a Streamlit interface for user interaction. The user can select stock options and timeframe using the interface. The results of the analysis are displayed in the Streamlit interface.
+
+The dashboard application can be found at: https://stockreviewer.streamlit.app/
