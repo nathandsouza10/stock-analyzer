@@ -5,7 +5,7 @@ This script uses the Alpaca API to retrieve historical data for various stocks a
 
 ## Dependencies
 
-- alpaca.data
+- alpaca-py
 - pandas
 - numpy
 - torch
