@@ -1,7 +1,6 @@
 import numpy as np
 
 
-
 def split_data(stock, lookback, test_size=0.2):
     data_raw = stock.to_numpy()  # convert to numpy array
     data = []

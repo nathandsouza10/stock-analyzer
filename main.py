@@ -29,7 +29,7 @@ torch.manual_seed(42)
 random.seed(42)
 
 st.title("Stock Analyzer")
-with st.expander("Menu"):
+with st.expander("Menu", expanded=True):
     STOCKS = st.multiselect(
         'Choose stock option(s)',
         ["BTC/USD", "ETH/USD", "LINK/USD", "SHIB/USD", "BCH/USD"],
@@ -37,20 +37,18 @@ with st.expander("Menu"):
     )
     TIMEFRAME = st.selectbox("Choose timeframe:", [TimeFrame.Hour, TimeFrame.Day])
 
-with st.spinner("Loading data from alpaca"):
-    client = CryptoHistoricalDataClient()
-    request_params = CryptoBarsRequest(
-        symbol_or_symbols=STOCKS,
-        timeframe=TIMEFRAME,
-        start=datetime(1600, 7, 1),  # ridiculous datetime chosen to get earliest and latest possible stock price
-        end=datetime(3030, 9, 1)
-    )
 
-    bars = client.get_crypto_bars(request_params)
-st.success("Completed: Loading Data")
+client = CryptoHistoricalDataClient()
+request_params = CryptoBarsRequest(
+    symbol_or_symbols=STOCKS,
+    timeframe=TIMEFRAME,
+    start=datetime(1600, 7, 1),  # ridiculous datetime chosen to get earliest and latest possible stock price
+    end=datetime(3030, 9, 1)
+)
+
+bars = client.get_crypto_bars(request_params)
 
 st.subheader("Stock Evaluation")
-
 model_eval_df = pd.DataFrame()
 with st.spinner("performing model evaluation"):
     for option in STOCKS:
@@ -74,7 +72,7 @@ with st.spinner("performing model evaluation"):
         hist = np.zeros(num_epochs)
         for t in range(num_epochs):
             y_train_pred = model(x_train)
-            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm))  # RMSE
+            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm))  # RMSEa
             hist[t] = loss.item()
             optimiser.zero_grad()
             loss.backward()
@@ -90,6 +88,7 @@ st.dataframe(model_eval_df, use_container_width=True)
 
 
 def get_modern_portfolio():
+    cycles = 8760 if TIMEFRAME == TimeFrame.Hour else 365
     closing_price_df = pd.DataFrame()
     for stock in STOCKS:
         closing_price_df[stock] = bars.df.loc[stock]['close']
@@ -102,8 +101,8 @@ def get_modern_portfolio():
         weights = np.random.random(len(STOCKS))
         weights /= np.sum(weights)
         weights_list.append(weights)
-        portfolio_returns.append(np.sum(weights * log_returns.mean()) * 365)
-        portfolio_volatilities.append(np.sqrt(np.dot(weights.T, np.dot(log_returns.cov() * 365, weights))))
+        portfolio_returns.append(np.sum(weights * log_returns.mean()) * cycles)
+        portfolio_volatilities.append(np.sqrt(np.dot(weights.T, np.dot(log_returns.cov() * cycles, weights))))
 
     portfolio_returns = np.array(portfolio_returns)
     portfolio_volatilities = np.array(portfolio_volatilities)
