@@ -1,5 +1,4 @@
 import alpaca.data
-
 import pandas
 import numpy as np
 import pandas as pd
@@ -35,9 +34,9 @@ with st.expander("Menu", expanded=True):
         ["BTC/USD", "ETH/USD", "LINK/USD", "SHIB/USD", "BCH/USD"],
         ["BTC/USD"]
     )
-    TIMEFRAME = st.selectbox("Choose timeframe:", [TimeFrame.Hour, TimeFrame.Day])
+    TIMEFRAME = st.selectbox("Choose timeframe:", [TimeFrame.Day, TimeFrame.Week])
 
-
+#get crypto data
 client = CryptoHistoricalDataClient()
 request_params = CryptoBarsRequest(
     symbol_or_symbols=STOCKS,
@@ -49,9 +48,10 @@ request_params = CryptoBarsRequest(
 bars = client.get_crypto_bars(request_params)
 
 st.subheader("Stock Evaluation")
-model_eval_df = pd.DataFrame()
+model_evaluations = {}
 with st.spinner("performing model evaluation"):
     for option in STOCKS:
+        eval_df = pd.DataFrame()
         data = bars.df.loc[option]
         price = data[['close']]
         scaler = MinMaxScaler(feature_range=(0, 1))
@@ -63,7 +63,7 @@ with st.spinner("performing model evaluation"):
         y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(device)
         y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(device)
 
-        num_epochs = 1000
+        num_epochs = 700
         model = LSTM(input_dim=1, hidden_dim=32, output_dim=1, num_layers=2)
         model = model.to(device)
         criterion = torch.nn.MSELoss()
@@ -72,7 +72,7 @@ with st.spinner("performing model evaluation"):
         hist = np.zeros(num_epochs)
         for t in range(num_epochs):
             y_train_pred = model(x_train)
-            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm))  # RMSEa
+            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm))  # RMSE
             hist[t] = loss.item()
             optimiser.zero_grad()
             loss.backward()
@@ -81,10 +81,14 @@ with st.spinner("performing model evaluation"):
         with torch.no_grad():
             y_test_pred = model(x_test)
 
-        model_eval_df[option] = [torch.sqrt(criterion(y_test_pred, y_test_lstm)).item(),
-                                 torch.sqrt(criterion(y_train_pred, y_train_lstm)).item()]
+        eval_df['y_pred'] = y_test_pred.numpy().squeeze()
+        eval_df['y_test'] = y_test_lstm.numpy().squeeze()
+        model_evaluations[option] = eval_df
 
-st.dataframe(model_eval_df, use_container_width=True)
+for stock_option in model_evaluations:
+    eval_df = model_evaluations[stock_option]
+    with st.expander(f"{stock_option}", expanded=False):
+        st.line_chart(eval_df)
 
 
 def get_modern_portfolio():
