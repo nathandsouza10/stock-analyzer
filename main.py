@@ -85,14 +85,17 @@ with st.spinner("performing model evaluation"):
         eval_df['y_test'] = y_test_lstm.numpy().squeeze()
         model_evaluations[option] = eval_df
 
-for stock_option in model_evaluations:
+cols = st.columns(len(model_evaluations))
+
+for index, stock_option in enumerate(model_evaluations):
     eval_df = model_evaluations[stock_option]
-    with st.expander(f"{stock_option}", expanded=False):
+    with cols[index]:
+        st.write(f"{stock_option}")
         st.line_chart(eval_df)
 
 
 def get_modern_portfolio():
-    cycles = 8760 if TIMEFRAME == TimeFrame.Hour else 365
+    cycles = 52 if TIMEFRAME == TimeFrame.Hour else 365
     closing_price_df = pd.DataFrame()
     for stock in STOCKS:
         closing_price_df[stock] = bars.df.loc[stock]['close']
