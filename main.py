@@ -35,8 +35,9 @@ with st.expander("Menu", expanded=True):
         ["BTC/USD"]
     )
     TIMEFRAME = st.selectbox("Choose timeframe:", [TimeFrame.Day, TimeFrame.Week])
+    LOOKBACK = st.slider("lookback (per interval chosen):", 2, 20)
 
-#get crypto data
+# get crypto data
 client = CryptoHistoricalDataClient()
 request_params = CryptoBarsRequest(
     symbol_or_symbols=STOCKS,
@@ -56,8 +57,7 @@ with st.spinner("performing model evaluation"):
         price = data[['close']]
         scaler = MinMaxScaler(feature_range=(0, 1))
         price['close'] = scaler.fit_transform(price['close'].values.reshape(-1, 1))
-        lookback = 10
-        x_train, y_train, x_test, y_test = split_data(price, lookback, test_size=0.25)
+        x_train, y_train, x_test, y_test = split_data(price, LOOKBACK, test_size=0.25)
         x_train = torch.from_numpy(x_train).type(torch.Tensor).to(device)
         x_test = torch.from_numpy(x_test).type(torch.Tensor).to(device)
         y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(device)
@@ -104,7 +104,7 @@ def get_modern_portfolio():
     portfolio_returns = []
     portfolio_volatilities = []
     weights_list = []
-    for x in range(2000):
+    for x in range(5000):
         weights = np.random.random(len(STOCKS))
         weights /= np.sum(weights)
         weights_list.append(weights)
