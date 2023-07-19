@@ -36,3 +36,6 @@ The script retrieves historical data for the selected stocks using the Alpaca AP
 The script also includes a Streamlit interface for user interaction. The user can select stock options and timeframe using the interface. The results of the analysis are displayed in the Streamlit interface.
 
 The dashboard application can be found at: https://stockreviewer.streamlit.app/
+
+
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/3b50c64e-a75a-416a-8856-39777a344dc5)
