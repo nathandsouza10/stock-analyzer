@@ -35,7 +35,8 @@ with st.expander("Menu", expanded=True):
         ["BTC/USD"]
     )
     TIMEFRAME = st.selectbox("Choose timeframe:", [TimeFrame.Day, TimeFrame.Week])
-    LOOKBACK = st.slider("lookback (per interval chosen):", 2, 20)
+    LOOKBACK = st.slider("lookback (as per timeframe):", 2, 20)
+    TEST_SIZE = st.slider("Choose test size ratio", 0.01, 0.99)
 
 # get crypto data
 client = CryptoHistoricalDataClient()
@@ -57,7 +58,7 @@ with st.spinner("performing model evaluation"):
         price = data[['close']]
         scaler = MinMaxScaler(feature_range=(0, 1))
         price['close'] = scaler.fit_transform(price['close'].values.reshape(-1, 1))
-        x_train, y_train, x_test, y_test = split_data(price, LOOKBACK, test_size=0.25)
+        x_train, y_train, x_test, y_test = split_data(price, LOOKBACK, test_size=TEST_SIZE)
         x_train = torch.from_numpy(x_train).type(torch.Tensor).to(device)
         x_test = torch.from_numpy(x_test).type(torch.Tensor).to(device)
         y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(device)
@@ -70,10 +71,10 @@ with st.spinner("performing model evaluation"):
         optimiser = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
 
         hist = np.zeros(num_epochs)
-        for t in range(num_epochs):
+        for epoch in range(num_epochs):
             y_train_pred = model(x_train)
             loss = torch.sqrt(criterion(y_train_pred, y_train_lstm))  # RMSE
-            hist[t] = loss.item()
+            hist[epoch] = loss.item()
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
