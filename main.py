@@ -15,10 +15,14 @@ from datetime import datetime, timedelta
 from utils import split_data
 import altair as alt
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
+# load_dotenv()
+# api_key = os.getenv("api_key")
+# secret = os.getenv("secret")
+
 from sklearn.preprocessing import MinMaxScaler
 
-load_dotenv()
+
 device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
 st.set_page_config(layout="wide")
