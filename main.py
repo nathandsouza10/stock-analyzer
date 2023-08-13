@@ -16,13 +16,9 @@ from utils import split_data
 import altair as alt
 from sklearn.preprocessing import MinMaxScaler
 import os
-from dotenv import load_dotenv
-load_dotenv()
-api_key = os.getenv("api_key")
-secret = os.getenv("secret")
 
 # production env varaibles loaded from
-# api_key, secret = st.secrets["api_key"], st.secrets["secret"]
+api_key, secret = st.secrets["api_key"], st.secrets["secret"]
 
 device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
