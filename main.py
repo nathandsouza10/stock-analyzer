@@ -129,6 +129,7 @@ with col1:
     optimal_weightings_df = pd.DataFrame()
     for i, stock in enumerate(STOCKS):
         optimal_weightings_df[stock] = [weights_list[min_volatility_df.index[0]][i]]
+    st.write("Minimum volatility portfolio ratio")
     st.dataframe(optimal_weightings_df, use_container_width=True)
 
 with col2:
