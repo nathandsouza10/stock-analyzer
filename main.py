@@ -132,11 +132,16 @@ with st.spinner("Loading..."):
         # Assuming you sell all the shares at the last available price if you still have any
         final_portfolio_value = shares_owned * price.iloc[-1]['close'] + cash
         profit_loss = final_portfolio_value - 1000
+        percentage_increase = ((final_portfolio_value - cash_init) / cash_init) * 100
+
         risk_df.at[option, 'final_portfolio_value'] = final_portfolio_value
         risk_df.at[option, 'profit/loss'] = profit_loss
+        risk_df.at[option, 'percentage_increase'] = percentage_increase
 
     risk_df = risk_df.sort_values(by='final_portfolio_value', ascending=False)
-    st.dataframe(risk_df, use_container_width=True)
+    st.dataframe(risk_df, use_container_width=True, column_config={
+        "percentage_increase": st.column_config.NumberColumn(format="%d%%")
+    })
 
 st.subheader("LSTM stock evaluation")
 model_evaluations = {}
