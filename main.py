@@ -131,7 +131,7 @@ with st.spinner("Loading..."):
 
         # Assuming you sell all the shares at the last available price if you still have any
         final_portfolio_value = shares_owned * price.iloc[-1]['close'] + cash
-        profit_loss = final_portfolio_value - 1000
+        profit_loss = final_portfolio_value - cash_init
         percentage_increase = ((final_portfolio_value - cash_init) / cash_init) * 100
 
         risk_df.at[option, 'final_portfolio_value'] = final_portfolio_value
