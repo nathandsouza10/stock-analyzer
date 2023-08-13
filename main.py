@@ -17,7 +17,6 @@ import altair as alt
 from sklearn.preprocessing import MinMaxScaler
 import os
 
-# production env varaibles loaded from
 api_key, secret = st.secrets["api_key"], st.secrets["secret"]
 
 device = ('cuda' if torch.cuda.is_available() else 'cpu')
@@ -97,16 +96,18 @@ with st.spinner("Loading..."):
         ).interactive()
         st.altair_chart(chart, theme="streamlit", use_container_width=True)
 
-st.subheader("Moving Average analysis")
+st.subheader("Moving Average analysis (200 day)")
+
+cash_init = st.number_input("Enter Cash Invested", value=1000)
+
 with st.spinner("Loading..."):
     risk_df = pd.DataFrame(index=STOCKS, columns=['final_portfolio_value', 'profit/loss'])
-
     for option in STOCKS:
         data = bars.df.loc[option]
         price = data[['close']].copy()  # Create a copy to avoid modifying the original dataframe
         price['200day(MA)'] = price.rolling(window=200).mean()
         price['buy/sell'] = 'Hold'  # default action is to hold
-        cash = 1000
+        cash = cash_init
         shares_owned = 0
         already_bought = False  # flag to check if you've already bought shares
         already_sold = False  # flag to check if you've already sold shares
