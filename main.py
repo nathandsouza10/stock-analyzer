@@ -43,7 +43,7 @@ with st.expander("Menu", expanded=True):
     TEST_SIZE = st.slider("Choose test size ratio", 0.01, 0.99)
 
 # get crypto data
-client = StockHistoricalDataClient(st.secrets("api_key"), st.secrets("secret"))
+client = StockHistoricalDataClient(st.secrets["api_key"], st.secrets["secret"])
 request = StockBarsRequest(
     symbol_or_symbols=STOCKS,
     timeframe=TimeFrame.Day,
