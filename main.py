@@ -6,18 +6,19 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import random
-
 import streamlit as st
 from models import LSTM
-from alpaca.data.historical import CryptoHistoricalDataClient
-from alpaca.data.requests import CryptoBarsRequest
+from alpaca.data.historical import CryptoHistoricalDataClient, StockHistoricalDataClient
+from alpaca.data.requests import CryptoBarsRequest, StockBarsRequest
 from alpaca.data.timeframe import TimeFrame
 from datetime import datetime
 from utils import split_data
 import altair as alt
-
+import os
+from dotenv import load_dotenv
 from sklearn.preprocessing import MinMaxScaler
 
+load_dotenv()
 device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
 st.set_page_config(layout="wide")
@@ -31,27 +32,25 @@ st.title("Stock Analyzer")
 with st.expander("Menu", expanded=True):
     STOCKS = st.multiselect(
         'Choose stock option(s)',
-        ["BTC/USD", "ETH/USD", "LINK/USD", "SHIB/USD", "BCH/USD"],
-        ["BTC/USD"]
+        ["AAPL", "MSFT", "TSLA"],
+        ["AAPL"]
     )
-    TIMEFRAME = st.selectbox("Choose timeframe:", [TimeFrame.Day, TimeFrame.Week])
-    LOOKBACK = st.slider("lookback (as per timeframe):", 2, 20)
+    LOOKBACK = st.slider("lookback(days):", 2, 20)
     TEST_SIZE = st.slider("Choose test size ratio", 0.01, 0.99)
 
 # get crypto data
-client = CryptoHistoricalDataClient()
-request_params = CryptoBarsRequest(
+client = StockHistoricalDataClient(os.getenv("api_key"), os.getenv("secret"))
+request = StockBarsRequest(
     symbol_or_symbols=STOCKS,
-    timeframe=TIMEFRAME,
-    start=datetime(1600, 7, 1),  # ridiculous datetime chosen to get earliest and latest possible stock price
-    end=datetime(3030, 9, 1)
+    timeframe=TimeFrame.Day,
+    start=datetime(1800, 10, 1),
+    end=datetime(2023, 6, 1),
 )
 
-bars = client.get_crypto_bars(request_params)
-
-st.subheader("Stock Evaluation")
+bars = client.get_stock_bars(request)
+st.subheader("LSTM stock evaluation")
 model_evaluations = {}
-with st.spinner("performing model evaluation"):
+with st.spinner("performing LSTM model evaluation"):
     for option in STOCKS:
         eval_df = pd.DataFrame()
         data = bars.df.loc[option]
@@ -96,7 +95,7 @@ for index, stock_option in enumerate(model_evaluations):
 
 
 def get_modern_portfolio():
-    cycles = 52 if TIMEFRAME == TimeFrame.Hour else 365
+    cycles = 252  # number of stock trading days in a year
     closing_price_df = pd.DataFrame()
     for stock in STOCKS:
         closing_price_df[stock] = bars.df.loc[stock]['close']
