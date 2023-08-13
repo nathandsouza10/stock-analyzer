@@ -14,14 +14,15 @@ from alpaca.data.timeframe import TimeFrame
 from datetime import datetime, timedelta
 from utils import split_data
 import altair as alt
-import os
-# from dotenv import load_dotenv
-# load_dotenv()
-# api_key = os.getenv("api_key")
-# secret = os.getenv("secret")
-
 from sklearn.preprocessing import MinMaxScaler
+import os
+from dotenv import load_dotenv
+load_dotenv()
+api_key = os.getenv("api_key")
+secret = os.getenv("secret")
 
+# production env varaibles loaded from
+# api_key, secret = st.secrets["api_key"], st.secrets["secret"]
 
 device = ('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -43,7 +44,7 @@ with st.expander("Menu", expanded=True):
     TEST_SIZE = st.slider("Choose test size ratio", 0.01, 0.99)
 
 # get crypto data
-client = StockHistoricalDataClient(st.secrets["api_key"], st.secrets["secret"])
+client = StockHistoricalDataClient(api_key, secret)
 request = StockBarsRequest(
     symbol_or_symbols=STOCKS,
     timeframe=TimeFrame.Day,
@@ -102,7 +103,8 @@ with st.spinner("Loading..."):
 
 st.subheader("Moving Average analysis")
 with st.spinner("Loading..."):
-    risk_df = pd.DataFrame()
+    risk_df = pd.DataFrame(index=STOCKS, columns=['final_portfolio_value', 'profit/loss'])
+
     for option in STOCKS:
         data = bars.df.loc[option]
         price = data[['close']].copy()  # Create a copy to avoid modifying the original dataframe
@@ -132,8 +134,12 @@ with st.spinner("Loading..."):
 
         # Assuming you sell all the shares at the last available price if you still have any
         final_portfolio_value = shares_owned * price.iloc[-1]['close'] + cash
-        st.write(final_portfolio_value)
-        st.write(price)
+        profit_loss = final_portfolio_value - 1000
+        risk_df.at[option, 'final_portfolio_value'] = final_portfolio_value
+        risk_df.at[option, 'profit/loss'] = profit_loss
+
+    risk_df = risk_df.sort_values(by='final_portfolio_value', ascending=False)
+    st.dataframe(risk_df, use_container_width=True)
 
 st.subheader("LSTM stock evaluation")
 model_evaluations = {}
