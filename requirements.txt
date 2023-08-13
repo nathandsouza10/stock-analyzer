@@ -5,5 +5,3 @@ torch
 alpaca-py
 scikit-learn
 streamlit
-python-dotenv
-dotenv
