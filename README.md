@@ -38,4 +38,6 @@ The script also includes a Streamlit interface for user interaction. The user ca
 The dashboard application can be found at: https://stockreviewer.streamlit.app/
 
 
-![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/3b50c64e-a75a-416a-8856-39777a344dc5)
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/5a0a2cfa-2c67-453c-bc90-14cf635f063d)
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/2bc00592-dc82-4ca2-ba67-d7560a758719)
+
