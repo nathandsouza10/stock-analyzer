@@ -133,8 +133,8 @@ with st.spinner("performing LSTM model evaluation"):
         with torch.no_grad():
             y_test_pred = model(x_test)
 
-        eval_df['y_pred'] = y_test_pred.numpy().squeeze()
-        eval_df['y_test'] = y_test_lstm.numpy().squeeze()
+        eval_df['y_pred'] = y_test_pred.cpu().numpy().squeeze()
+        eval_df['y_test'] = y_test_lstm.cpu().numpy().squeeze()
         model_evaluations[option] = eval_df
 
 cols = st.columns(len(model_evaluations))
