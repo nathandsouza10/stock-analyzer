@@ -6,32 +6,32 @@ import pandas as pd
 
 def get_daily_stock_data(tickers):
     today = datetime.today().strftime('%Y-%m-%d')
-    data = yf.download(tickers, start="1980-01-01", end=today)
+    data = yf.download(tickers, start="1800-01-01", end=today)
     return data['Close']
 
 
 def get_modern_portfolio(stocks_list):
     cycles = 252  # number of stock trading days in a year
-    closing_price_df = pd.DataFrame()
-    for stock in stocks_list:
-        closing_price_df[stock] = get_daily_stock_data(stocks_list)[stock]
+
+    daily_stock_data = get_daily_stock_data(stocks_list)
+    closing_price_df = pd.DataFrame({stock: daily_stock_data[stock] for stock in stocks_list})
 
     log_returns = np.log(closing_price_df / closing_price_df.shift(1))
-    portfolio_returns = []
-    portfolio_volatilities = []
-    weights_list = []
-    for x in range(1000):
-        weights = np.random.random(len(stocks_list))
-        weights /= np.sum(weights)
-        weights_list.append(weights)
-        portfolio_returns.append(np.sum(weights * log_returns.mean()) * cycles)
-        portfolio_volatilities.append(np.sqrt(np.dot(weights.T, np.dot(log_returns.cov() * cycles, weights))))
 
-    portfolio_returns = np.array(portfolio_returns)
-    portfolio_volatilities = np.array(portfolio_volatilities)
+    num_portfolios = 1000
+    num_stocks = len(stocks_list)
 
-    portfolios = pd.DataFrame({'Return': portfolio_returns, 'Volatility': portfolio_volatilities})
-    return portfolios, weights_list
+    # Generate random weights for all portfolios at once
+    weights = np.random.rand(num_portfolios, num_stocks)
+    weights = weights / np.sum(weights, axis=1)[:, np.newaxis]
+
+    # Calculate expected returns and volatilities for all portfolios
+    expected_returns = np.sum(weights * log_returns.mean().values[np.newaxis, :], axis=1) * cycles
+    cov_matrix = log_returns.cov().values
+    volatilities = np.sqrt(np.einsum('ij,jk,ik->i', weights, cov_matrix * cycles, weights))
+
+    portfolios = pd.DataFrame({'Return': expected_returns, 'Volatility': volatilities})
+    return portfolios, weights
 
 
 def split_data(stock, lookback, test_size=0.2):

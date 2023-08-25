@@ -1,18 +1,12 @@
 import numpy as np
 import pandas as pd
 import torch
-import torch.nn as nn
-import torch.optim as optim
 import random
 import streamlit as st
 from models import LSTM
-from datetime import datetime, timedelta
 from utils import split_data, get_daily_stock_data, get_modern_portfolio
 import altair as alt
 from sklearn.preprocessing import MinMaxScaler
-import os
-
-api_key, secret = st.secrets["api_key"], st.secrets["secret"]
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -27,8 +21,8 @@ st.title("Stock Analyzer")
 with st.expander("Menu", expanded=True):
     STOCKS = st.multiselect(
         'Please Choose stocks:',
-        ['AAPL', 'MSFT', 'GOOGL'],
-        ['AAPL', 'MSFT', 'GOOGL'])
+        ['AAPL', 'MSFT', 'GOOGL', 'NFLX'],
+        ['AAPL', 'MSFT', 'GOOGL', 'NFLX'])
     LOOKBACK = st.slider("lookback(days):", 2, 20)
     TEST_SIZE = st.slider("Choose test size ratio", 0.01, 0.99)
 
@@ -57,9 +51,7 @@ with st.spinner("Loading..."):
         st.altair_chart(chart, theme="streamlit", use_container_width=True)
 
 st.subheader("Moving Average analysis (200 day)")
-
 cash_init = st.number_input("Enter Cash Invested", value=1000)
-
 with st.spinner("Loading..."):
     risk_df = pd.DataFrame(index=STOCKS, columns=['final_portfolio_value', 'profit/loss'])
     for option in STOCKS:
