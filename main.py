@@ -1,5 +1,3 @@
-import alpaca.data
-import pandas
 import numpy as np
 import pandas as pd
 import torch
@@ -8,18 +6,15 @@ import torch.optim as optim
 import random
 import streamlit as st
 from models import LSTM
-from alpaca.data.historical import CryptoHistoricalDataClient, StockHistoricalDataClient
-from alpaca.data.requests import CryptoBarsRequest, StockBarsRequest
-from alpaca.data.timeframe import TimeFrame
 from datetime import datetime, timedelta
-from utils import split_data
+from utils import split_data, get_daily_stock_data, get_modern_portfolio
 import altair as alt
 from sklearn.preprocessing import MinMaxScaler
 import os
 
 api_key, secret = st.secrets["api_key"], st.secrets["secret"]
 
-device = ('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 st.set_page_config(layout="wide")
 
@@ -31,52 +26,17 @@ random.seed(42)
 st.title("Stock Analyzer")
 with st.expander("Menu", expanded=True):
     STOCKS = st.multiselect(
-        'Choose stock option(s)',
-        ["AAPL", "MSFT", "TSLA", "AMZN", "WMT", "PFE", "KO"],
-        ["AAPL", "MSFT", "TSLA", "AMZN", "WMT", "PFE", "KO"]
-    )
+        'Please Choose stocks:',
+        ['AAPL', 'MSFT', 'GOOGL'],
+        ['AAPL', 'MSFT', 'GOOGL'])
     LOOKBACK = st.slider("lookback(days):", 2, 20)
     TEST_SIZE = st.slider("Choose test size ratio", 0.01, 0.99)
 
-# get crypto data
-client = StockHistoricalDataClient(api_key, secret)
-request = StockBarsRequest(
-    symbol_or_symbols=STOCKS,
-    timeframe=TimeFrame.Day,
-    start=datetime(1800, 10, 1),
-    end=datetime.now() - timedelta(days=1),
-)
-
-bars = client.get_stock_bars(request)
-
-
-def get_modern_portfolio():
-    cycles = 252  # number of stock trading days in a year
-    closing_price_df = pd.DataFrame()
-    for stock in STOCKS:
-        closing_price_df[stock] = bars.df.loc[stock]['close']
-
-    log_returns = np.log(closing_price_df / closing_price_df.shift(1))
-    portfolio_returns = []
-    portfolio_volatilities = []
-    weights_list = []
-    for x in range(1000):
-        weights = np.random.random(len(STOCKS))
-        weights /= np.sum(weights)
-        weights_list.append(weights)
-        portfolio_returns.append(np.sum(weights * log_returns.mean()) * cycles)
-        portfolio_volatilities.append(np.sqrt(np.dot(weights.T, np.dot(log_returns.cov() * cycles, weights))))
-
-    portfolio_returns = np.array(portfolio_returns)
-    portfolio_volatilities = np.array(portfolio_volatilities)
-
-    portfolios = pd.DataFrame({'Return': portfolio_returns, 'Volatility': portfolio_volatilities})
-    return portfolios, weights_list
-
+bars = get_daily_stock_data(STOCKS)
 
 st.subheader("Modern Portfolio Theory")
 with st.spinner("Loading..."):
-    portfolios, weights_list = get_modern_portfolio()
+    portfolios, weights_list = get_modern_portfolio(STOCKS)
     col1, col2 = st.columns(2)
     with col1:
         st.write("Minimum volatility portfolio")
@@ -103,8 +63,8 @@ cash_init = st.number_input("Enter Cash Invested", value=1000)
 with st.spinner("Loading..."):
     risk_df = pd.DataFrame(index=STOCKS, columns=['final_portfolio_value', 'profit/loss'])
     for option in STOCKS:
-        data = bars.df.loc[option]
-        price = data[['close']].copy()  # Create a copy to avoid modifying the original dataframe
+        data = bars[option]
+        price = data.reset_index(drop=True).to_frame(name='close')
         price['200day(MA)'] = price.rolling(window=200).mean()
         price['buy/sell'] = 'Hold'  # default action is to hold
         cash = cash_init
@@ -115,7 +75,8 @@ with st.spinner("Loading..."):
         for i, row in price.iterrows():
             # Check if the close price is greater than the 200-day MA, you haven't bought any shares yet,
             # and you haven't already sold.
-            if row['close'] > row['200day(MA)'] and cash > 0 and row['close'] > 0 and not already_bought and not already_sold:
+            if row['close'] > row['200day(MA)'] and cash > 0 and row[
+                'close'] > 0 and not already_bought and not already_sold:
                 shares_bought = cash // row['close']  # Buy as many shares as you can
                 cash -= shares_bought * row['close']  # Update your cash after buying
                 shares_owned += shares_bought  # Update your total shares owned
@@ -136,7 +97,7 @@ with st.spinner("Loading..."):
 
         risk_df.at[option, 'final_portfolio_value'] = final_portfolio_value
         risk_df.at[option, 'profit/loss'] = profit_loss
-        risk_df.at[option, 'percentage_increase'] = percentage_increase
+        risk_df.at[option, 'percentage_change'] = percentage_increase
 
     risk_df = risk_df.sort_values(by='final_portfolio_value', ascending=False)
     st.dataframe(risk_df, use_container_width=True, column_config={
@@ -148,10 +109,9 @@ model_evaluations = {}
 with st.spinner("performing LSTM model evaluation"):
     for option in STOCKS:
         eval_df = pd.DataFrame()
-        data = bars.df.loc[option]
-        price = data[['close']]
+        price = bars[option]
         scaler = MinMaxScaler(feature_range=(0, 1))
-        price['close'] = scaler.fit_transform(price['close'].values.reshape(-1, 1))
+        price = scaler.fit_transform(price.values.reshape(-1, 1))
         x_train, y_train, x_test, y_test = split_data(price, LOOKBACK, test_size=TEST_SIZE)
         x_train = torch.from_numpy(x_train).type(torch.Tensor).to(device)
         x_test = torch.from_numpy(x_test).type(torch.Tensor).to(device)

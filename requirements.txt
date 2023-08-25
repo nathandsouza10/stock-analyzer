@@ -5,3 +5,4 @@ torch
 alpaca-py
 scikit-learn
 streamlit
+yfinance
