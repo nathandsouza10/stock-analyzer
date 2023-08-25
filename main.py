@@ -118,8 +118,8 @@ with st.spinner("performing LSTM model evaluation"):
         y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(device)
         y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(device)
 
-        num_epochs = 1000
-        model = LSTM(input_dim=1, hidden_dim=32, output_dim=1, num_layers=2)
+        num_epochs = 800
+        model = LSTM(input_dim=1, hidden_dim=64, output_dim=1, num_layers=2)
         model = model.to(device)
         criterion = torch.nn.MSELoss()
         optimiser = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
