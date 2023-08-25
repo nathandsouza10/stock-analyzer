@@ -32,13 +32,18 @@ st.subheader("Modern Portfolio Theory")
 with st.spinner("Loading..."):
     portfolios, weights_list = get_modern_portfolio(STOCKS)
     col1, col2 = st.columns(2)
+
+    # Efficiently find the index of the minimum volatility
+    min_vol_idx = portfolios['Volatility'].idxmin()
+    min_volatility_df = portfolios.iloc[[min_vol_idx]]
+
     with col1:
         st.write("Minimum volatility portfolio")
-        min_volatility_df = portfolios[portfolios['Volatility'] == min(portfolios['Volatility'])]
         st.dataframe(min_volatility_df, use_container_width=True)
-        optimal_weightings_df = pd.DataFrame()
-        for i, stock in enumerate(STOCKS):
-            optimal_weightings_df[stock] = [weights_list[min_volatility_df.index[0]][i]]
+
+        # Efficiently create the optimal weightings DataFrame
+        optimal_weightings_df = pd.DataFrame([weights_list[min_vol_idx]], columns=STOCKS)
+
         st.write("Minimum volatility portfolio ratio")
         st.dataframe(optimal_weightings_df, use_container_width=True)
 
