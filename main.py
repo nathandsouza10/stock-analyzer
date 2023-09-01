@@ -1,14 +1,19 @@
-import numpy as np
-import pandas as pd
-import torch
 import random
-import streamlit as st
-from models import LSTM
-from utils import split_data, get_daily_stock_data, get_modern_portfolio
+from utils import *
 import altair as alt
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.svm import SVR
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.tree import DecisionTreeRegressor
+import streamlit as st
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from datetime import timedelta
+import pandas as pd
+from sklearn.model_selection import GridSearchCV
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = get_device()
 
 st.set_page_config(layout="wide")
 
@@ -23,8 +28,6 @@ with st.expander("Menu", expanded=True):
         'Please Choose stocks:',
         ['AAPL', 'MSFT', 'GOOGL', 'NFLX'],
         ['AAPL', 'MSFT', 'GOOGL', 'NFLX'])
-    LOOKBACK = st.slider("lookback(days):", 2, 20)
-    TEST_SIZE = st.slider("Choose test size ratio", 0.01, 0.99)
 
 bars = get_daily_stock_data(STOCKS)
 
@@ -101,45 +104,154 @@ with st.spinner("Loading..."):
         "percentage_increase": st.column_config.NumberColumn(format="%d%%")
     })
 
-st.subheader("LSTM stock evaluation")
-model_evaluations = {}
-with st.spinner("performing LSTM model evaluation"):
-    for option in STOCKS:
-        eval_df = pd.DataFrame()
-        price = bars[option]
-        scaler = MinMaxScaler(feature_range=(0, 1))
-        price = scaler.fit_transform(price.values.reshape(-1, 1))
-        x_train, y_train, x_test, y_test = split_data(price, LOOKBACK, test_size=TEST_SIZE)
-        x_train = torch.from_numpy(x_train).type(torch.Tensor).to(device)
-        x_test = torch.from_numpy(x_test).type(torch.Tensor).to(device)
-        y_train_lstm = torch.from_numpy(y_train).type(torch.Tensor).to(device)
-        y_test_lstm = torch.from_numpy(y_test).type(torch.Tensor).to(device)
+st.subheader("stock evaluation")
+def get_model_performance(X_train, y_train, X_test, y_test, models):
+    best_model = None
+    best_mse = float('inf')
 
-        num_epochs = 800
-        model = LSTM(input_dim=1, hidden_dim=64, output_dim=1, num_layers=2)
-        model = model.to(device)
-        criterion = torch.nn.MSELoss()
-        optimiser = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
+    for name, model, param_grid in models:
+        grid_search = GridSearchCV(model, param_grid, cv=3, n_jobs=-1)
+        grid_search.fit(X_train, y_train)
+        best_grid = grid_search.best_estimator_
 
-        hist = np.zeros(num_epochs)
-        for epoch in range(num_epochs):
-            y_train_pred = model(x_train)
-            loss = torch.sqrt(criterion(y_train_pred, y_train_lstm))  # RMSE
-            hist[epoch] = loss.item()
-            optimiser.zero_grad()
-            loss.backward()
-            optimiser.step()
+        y_pred = best_grid.predict(X_test)
+        mse = mean_squared_error(y_test, y_pred)
 
-        with torch.no_grad():
-            y_test_pred = model(x_test)
+        if mse < best_mse:
+            best_mse = mse
+            best_model = best_grid
 
-        eval_df['y_pred'] = y_test_pred.cpu().numpy().squeeze()
-        eval_df['y_test'] = y_test_lstm.cpu().numpy().squeeze()
-        model_evaluations[option] = eval_df
+    return best_model
 
-cols = st.columns(len(model_evaluations))
-for index, stock_option in enumerate(model_evaluations):
-    eval_df = model_evaluations[stock_option]
-    with cols[index]:
-        st.write(f"{stock_option}")
-        st.line_chart(eval_df)
+
+# Random Forest
+param_grid_rf = {
+    'n_estimators': [50, 100, 150],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+
+}
+
+# Gradient Boosting
+param_grid_gb = {
+    'n_estimators': [50, 100, 150],
+    'learning_rate': [0.001, 0.01, 0.1],
+    'max_depth': [3, 4, 5]
+}
+
+# Linear Regression
+param_grid_lr = {
+    'fit_intercept': [True, False],
+}
+
+# Ridge Regression
+param_grid_ridge = {
+    'alpha': [0.001, 0.1, 1, 10],
+    'fit_intercept': [True, False],
+}
+
+# Lasso Regression
+param_grid_lasso = {
+    'alpha': [0.001,0.1, 1, 10],
+    'fit_intercept': [True, False],
+}
+
+# Elastic Net
+param_grid_en = {
+    'alpha': [0.001, 0.1, 1],
+    'l1_ratio': [0.2, 0.5, 0.7],
+    'fit_intercept': [True, False],
+}
+
+# Support Vector Regression
+param_grid_svr = {
+    'C': [0.2, 0.5, 2],
+    'epsilon': [0.05, 0.1, 0.5],
+    'kernel': ['linear', 'poly', 'rbf']
+}
+
+# K-Nearest Neighbors
+param_grid_knn = {
+    'n_neighbors': [2, 7, 9],
+    'weights': ['uniform', 'distance'],
+    'metric': ['euclidean', 'manhattan']
+}
+
+# Decision Tree
+param_grid_dt = {
+    'criterion': ['mse', 'friedman_mse', 'mae'],
+    'splitter': ['best', 'random'],
+    'max_depth': [10, 20, 30],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4]
+}
+
+
+models = [
+    ('RandomForest', RandomForestRegressor(), param_grid_rf),
+    ('GradientBoosting', GradientBoostingRegressor(), param_grid_gb),
+    ('LinearRegression', LinearRegression(), param_grid_lr),
+    ('Ridge', Ridge(), param_grid_ridge),
+    ('Lasso', Lasso(), param_grid_lasso),
+    ('ElasticNet', ElasticNet(), param_grid_en),
+    ('SVR', SVR(), param_grid_svr),
+    ('KNN', KNeighborsRegressor(), param_grid_knn),
+    ('DecisionTree', DecisionTreeRegressor(), param_grid_dt)
+]
+model_performance_dict = {}
+for ticker in STOCKS:
+    series = get_monthly_stock_data(ticker)
+    df = series.reset_index()
+    df.columns = ['Date', 'Price']
+    df['Date'] = pd.to_datetime(df['Date'])
+
+    df['Year'] = df['Date'].dt.year
+    df['Month'] = df['Date'].dt.month
+    df['Day_Delta'] = (df['Date'] - df['Date'].min()).dt.days
+
+    X = df[['Year', 'Month', 'Day_Delta']].values
+    y = df['Price'].values
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    best_model = get_model_performance(X_train, y_train, X_test, y_test, models)
+    model_performance_dict[ticker] = {
+        'Best Model': best_model.__class__.__name__,
+        'MSE': mean_squared_error(y_test, best_model.predict(X_test))
+    }
+
+    def estimate_price(input_date):
+        year = input_date.year
+        month = input_date.month
+        day_delta = (input_date - df['Date'].min()).days
+        return best_model.predict([[year, month, day_delta]])[0]
+
+    future_dates = [df['Date'].iloc[-1]] + [df['Date'].iloc[-1] + timedelta(days=i * 30) for i in range(1, 12)]
+    future_prices = [estimate_price(date) for date in future_dates]
+
+    future_df = pd.DataFrame({
+        'Date': future_dates,
+        'Estimated Prices': future_prices
+    })
+
+    combined_df = pd.DataFrame({
+        'Historical': df.set_index('Date')['Price'],
+        'Future': future_df.set_index('Date')['Estimated Prices']
+    })
+
+    st.write(f"{ticker}")
+
+    # Create three columns
+    col1, col2, col3 = st.columns(3)
+
+    # Left column for the line chart
+    with col1:
+        st.line_chart(combined_df)
+
+    # Middle column for the future prices DataFrame
+    with col2:
+        st.dataframe(future_df, use_container_width=True)
+
+    # Right column for model performance
+    with col3:
+        st.write(f"Best Model: {best_model.__class__.__name__}")
+        st.write(f"Mean Squared Error: {mean_squared_error(y_test, best_model.predict(X_test))}")

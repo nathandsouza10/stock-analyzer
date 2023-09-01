@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
-
-device = ('cuda' if torch.cuda.is_available() else 'cpu')
-
+import torch_directml
+# device = ('cuda' if torch.cuda.is_available() else 'cpu')
+device = torch_directml.device()
 
 class LSTM(nn.Module):
     def __init__(self, input_dim, hidden_dim, num_layers, output_dim):

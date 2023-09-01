@@ -2,12 +2,29 @@ import numpy as np
 import yfinance as yf
 from datetime import datetime
 import pandas as pd
+import torch
+
+
+def get_device():
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    try:
+        import torch_directml  # Importing this to check if it's installed and available
+        return torch_directml.device()
+    except ImportError:
+        return torch.device("cpu")
 
 
 def get_daily_stock_data(tickers):
     today = datetime.today().strftime('%Y-%m-%d')
-    data = yf.download(tickers, start="1800-01-01", end=today)
-    return data['Close']
+    data = yf.download(tickers, start="2007-01-01", end=today)
+    return data['Close'].dropna()
+
+
+def get_monthly_stock_data(tickers):
+    today = datetime.today().strftime('%Y-%m-%d')
+    data = yf.download(tickers, start="2007-01-01", end=today, interval='1mo')
+    return data['Close'].dropna()  # dropna to remove any NaN values
 
 
 def get_modern_portfolio(stocks_list):

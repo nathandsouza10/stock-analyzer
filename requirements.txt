@@ -2,7 +2,7 @@ pandas
 matplotlib
 numpy
 torch
-alpaca-py
 scikit-learn
 streamlit
 yfinance
+torch_directml
