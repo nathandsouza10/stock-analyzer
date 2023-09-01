@@ -257,8 +257,3 @@ with st.spinner("performing analysis"):
         with col3:
             st.write(f"Best Model: {best_model.__class__.__name__}")
             st.write(f"Mean Squared Error: {mean_squared_error(y_test, best_model.predict(X_test))}")
-
-# Convert the model performance dictionary to a DataFrame and display
-model_performance_df = pd.DataFrame.from_dict(model_performance_dict, orient='index')
-st.write("## Overall Model Performance")
-st.write(model_performance_df)
