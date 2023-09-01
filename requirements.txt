@@ -5,4 +5,3 @@ torch
 scikit-learn
 streamlit
 yfinance
-torch_directml
