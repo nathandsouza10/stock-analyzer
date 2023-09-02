@@ -44,3 +44,8 @@ Then navigate to http://localhost:8501/ in your browser.
 2. Grid search is performed to find the best hyperparameters for each model.
 3. Future prices are predicted using the best-performing model.
 4. Displays the future price predictions in a line chart along with the historical prices.
+
+5. ## Live Demo
+
+Visit [Stock Reviewer](https://stockreviewer.streamlit.app/) to see the live demo of the application.
+
