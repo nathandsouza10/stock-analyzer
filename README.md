@@ -1,11 +1,11 @@
 
 # Stock Analyzer
 
-This script uses the Alpaca API to retrieve historical data for various stocks and performs analysis using an LSTM model. The script also includes a Streamlit interface for user interaction.
+This script uses the Yahoo Finance API to retrieve historical data for various stocks and performs analysis using an LSTM model. The script also includes a Streamlit interface for user interaction.
 
 ## Dependencies
 
-- alpaca-py
+- yfinance
 - pandas
 - numpy
 - torch
@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 ## How it works
 
-The script retrieves historical data for the selected stocks using the Alpaca API. The data is preprocessed and split into training and test sets. An LSTM model is then trained on the training data to predict stock prices. The trained model is used to make predictions on the test data and the results are evaluated.
+The script retrieves historical data for the selected stocks using the Yahoo Finance API. The data is preprocessed and split into training and test sets. An LSTM model is then trained on the training data to predict stock prices. The trained model is used to make predictions on the test data and the results are evaluated.
 
 The script also includes a Streamlit interface for user interaction. The user can select stock options and timeframe using the interface. The results of the analysis are displayed in the Streamlit interface.
 
