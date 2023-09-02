@@ -3,6 +3,8 @@ import yfinance as yf
 from datetime import datetime
 import pandas as pd
 import torch
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_error
 
 
 def get_device():
@@ -74,3 +76,22 @@ def split_data(stock, lookback, test_size=0.2):
     y_test = data[train_set_size:, -1, :]
 
     return x_train, y_train, x_test, y_test
+
+
+def get_model_performance(X_train, y_train, X_test, y_test, models):
+    best_model = None
+    best_mse = float('inf')
+
+    for name, model, param_grid in models:
+        grid_search = GridSearchCV(model, param_grid, cv=3, n_jobs=-1)
+        grid_search.fit(X_train, y_train)
+        best_grid = grid_search.best_estimator_
+
+        y_pred = best_grid.predict(X_test)
+        mse = mean_squared_error(y_test, y_pred)
+
+        if mse < best_mse:
+            best_mse = mse
+            best_model = best_grid
+
+    return best_model

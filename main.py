@@ -58,7 +58,7 @@ with st.spinner("Loading..."):
         ).interactive()
         st.altair_chart(chart, theme="streamlit", use_container_width=True)
 
-st.subheader("Moving Average analysis (200 day)")
+st.subheader("Moving Average Analysis (200 day)")
 cash_init = st.number_input("Enter Cash Invested", value=1000)
 with st.spinner("Loading..."):
     risk_df = pd.DataFrame(index=STOCKS, columns=['final_portfolio_value', 'profit/loss'])
@@ -104,25 +104,7 @@ with st.spinner("Loading..."):
         "percentage_increase": st.column_config.NumberColumn(format="%d%%")
     })
 
-st.subheader("stock evaluation")
-def get_model_performance(X_train, y_train, X_test, y_test, models):
-    best_model = None
-    best_mse = float('inf')
-
-    for name, model, param_grid in models:
-        grid_search = GridSearchCV(model, param_grid, cv=3, n_jobs=-1)
-        grid_search.fit(X_train, y_train)
-        best_grid = grid_search.best_estimator_
-
-        y_pred = best_grid.predict(X_test)
-        mse = mean_squared_error(y_test, y_pred)
-
-        if mse < best_mse:
-            best_mse = mse
-            best_model = best_grid
-
-    return best_model
-
+st.subheader("Stock Time Series Analysis")
 
 # Random Forest
 param_grid_rf = {
@@ -152,7 +134,7 @@ param_grid_ridge = {
 
 # Lasso Regression
 param_grid_lasso = {
-    'alpha': [0.001,0.1, 1, 10],
+    'alpha': [0.001, 0.1, 1, 10],
     'fit_intercept': [True, False],
 }
 
@@ -186,7 +168,6 @@ param_grid_dt = {
     'min_samples_leaf': [1, 2, 4]
 }
 
-
 models = [
     ('RandomForest', RandomForestRegressor(), param_grid_rf),
     ('GradientBoosting', GradientBoostingRegressor(), param_grid_gb),
@@ -200,58 +181,61 @@ models = [
 ]
 model_performance_dict = {}
 for ticker in STOCKS:
-    series = get_monthly_stock_data(ticker)
-    df = series.reset_index()
-    df.columns = ['Date', 'Price']
-    df['Date'] = pd.to_datetime(df['Date'])
+    with st.spinner(f"Performing time series analysis for: {ticker}"):
+        series = get_monthly_stock_data(ticker)
+        df = series.reset_index()
+        df.columns = ['Date', 'Price']
+        df['Date'] = pd.to_datetime(df['Date'])
 
-    df['Year'] = df['Date'].dt.year
-    df['Month'] = df['Date'].dt.month
-    df['Day_Delta'] = (df['Date'] - df['Date'].min()).dt.days
+        df['Year'] = df['Date'].dt.year
+        df['Month'] = df['Date'].dt.month
+        df['Day_Delta'] = (df['Date'] - df['Date'].min()).dt.days
 
-    X = df[['Year', 'Month', 'Day_Delta']].values
-    y = df['Price'].values
+        X = df[['Year', 'Month', 'Day_Delta']].values
+        y = df['Price'].values
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    best_model = get_model_performance(X_train, y_train, X_test, y_test, models)
-    model_performance_dict[ticker] = {
-        'Best Model': best_model.__class__.__name__,
-        'MSE': mean_squared_error(y_test, best_model.predict(X_test))
-    }
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        best_model = get_model_performance(X_train, y_train, X_test, y_test, models)
+        model_performance_dict[ticker] = {
+            'Best Model': best_model.__class__.__name__,
+            'MSE': mean_squared_error(y_test, best_model.predict(X_test))
+        }
 
-    def estimate_price(input_date):
-        year = input_date.year
-        month = input_date.month
-        day_delta = (input_date - df['Date'].min()).days
-        return best_model.predict([[year, month, day_delta]])[0]
 
-    future_dates = [df['Date'].iloc[-1]] + [df['Date'].iloc[-1] + timedelta(days=i * 30) for i in range(1, 12)]
-    future_prices = [estimate_price(date) for date in future_dates]
+        def estimate_price(input_date):
+            year = input_date.year
+            month = input_date.month
+            day_delta = (input_date - df['Date'].min()).days
+            return best_model.predict([[year, month, day_delta]])[0]
 
-    future_df = pd.DataFrame({
-        'Date': future_dates,
-        'Estimated Prices': future_prices
-    })
 
-    combined_df = pd.DataFrame({
-        'Historical': df.set_index('Date')['Price'],
-        'Future': future_df.set_index('Date')['Estimated Prices']
-    })
+        future_dates = [df['Date'].iloc[-1]] + [df['Date'].iloc[-1] + timedelta(days=i * 30) for i in range(1, 12)]
+        future_prices = [estimate_price(date) for date in future_dates]
 
-    st.write(f"{ticker}")
+        future_df = pd.DataFrame({
+            'Date': future_dates,
+            'Estimated Prices': future_prices
+        })
 
-    # Create three columns
-    col1, col2, col3 = st.columns(3)
+        combined_df = pd.DataFrame({
+            'Historical': df.set_index('Date')['Price'],
+            'Future': future_df.set_index('Date')['Estimated Prices']
+        })
 
-    # Left column for the line chart
-    with col1:
-        st.line_chart(combined_df)
+        st.write(f"{ticker}")
 
-    # Middle column for the future prices DataFrame
-    with col2:
-        st.dataframe(future_df, use_container_width=True)
+        # Create three columns
+        col1, col2, col3 = st.columns(3)
 
-    # Right column for model performance
-    with col3:
-        st.write(f"Best Model: {best_model.__class__.__name__}")
-        st.write(f"Mean Squared Error: {mean_squared_error(y_test, best_model.predict(X_test))}")
+        # Left column for the line chart
+        with col1:
+            st.line_chart(combined_df)
+
+        # Middle column for the future prices DataFrame
+        with col2:
+            st.dataframe(future_df, use_container_width=True)
+
+        # Right column for model performance
+        with col3:
+            st.write(f"Best Model: {best_model.__class__.__name__}")
+            st.write(f"Mean Squared Error: {mean_squared_error(y_test, best_model.predict(X_test))}")
