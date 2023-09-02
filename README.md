@@ -1,43 +1,46 @@
-
 # Stock Analyzer
 
-This script uses the Yahoo Finance API to retrieve historical data for various stocks and performs analysis using an LSTM model. The script also includes a Streamlit interface for user interaction.
+## Description
 
-## Dependencies
+This Streamlit application serves as a comprehensive tool for stock analysis. It offers several functionalities, including portfolio optimization based on Modern Portfolio Theory, Moving Average Analysis for individual stocks, and time series analysis for future price prediction using machine learning models.
 
-- yfinance
-- pandas
-- numpy
-- torch
-- streamlit
-- altair
-- sklearn
+## Features
+
+1. **Stock Selection:** Choose from a list of available stocks (AAPL, MSFT, GOOGL, NFLX).
+2. **Modern Portfolio Theory Analysis:** Get the most efficient portfolio with minimum volatility.
+3. **Moving Average Analysis:** Buy/Sell signal generation based on 200-day moving average.
+4. **Stock Time Series Analysis:** Future price predictions based on multiple machine learning models like Random Forest, Gradient Boosting, Linear Regression, and more.
 
 ## Installation
 
-To install the required dependencies, you can use pip:
-
-```
-pip install -r requirements.txt
-```
+1. Clone the repository.
+    git clone https://github.com/your-repo/stock-analyzer.git
+2. Navigate to the project directory.
+    cd stock-analyzer
+3. Install the required packages.
+    pip install -r requirements.txt
 
 ## Usage
 
-1. Install the required dependencies.
-2. Run the script using Streamlit: `streamlit run main.py`
-3. Use the Streamlit interface to select stock options and timeframe.
-4. The script will retrieve historical data for the selected stocks and perform analysis using an LSTM model.
-5. The results of the analysis will be displayed in the Streamlit interface.
+Run the Streamlit application.
+streamlit run app.py
+Then navigate to http://localhost:8501/ in your browser.
 
 ## How it works
 
-The script retrieves historical data for the selected stocks using the Yahoo Finance API. The data is preprocessed and split into training and test sets. An LSTM model is then trained on the training data to predict stock prices. The trained model is used to make predictions on the test data and the results are evaluated.
+### Modern Portfolio Theory
 
-The script also includes a Streamlit interface for user interaction. The user can select stock options and timeframe using the interface. The results of the analysis are displayed in the Streamlit interface.
+1. **Portfolio Graph:** Plots return against volatility for a collection of portfolios containing the chosen stocks.
+2. **Minimum Volatility Portfolio:** Shows the portfolio with the minimum volatility and the respective weightage of each stock in that portfolio.
 
-The dashboard application can be found at: https://stockreviewer.streamlit.app/
+### Moving Average Analysis
 
+1. Compares the closing price to its 200-day moving average.
+2. Generates Buy or Sell signals based on this comparison.
 
-![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/5a0a2cfa-2c67-453c-bc90-14cf635f063d)
-![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/2bc00592-dc82-4ca2-ba67-d7560a758719)
+### Stock Time Series Analysis
 
+1. Splits the historical price data into training and test sets.
+2. Grid search is performed to find the best hyperparameters for each model.
+3. Future prices are predicted using the best-performing model.
+4. Displays the future price predictions in a line chart along with the historical prices.
