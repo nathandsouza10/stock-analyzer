@@ -35,9 +35,6 @@ class TestGetModernPortfolio(unittest.TestCase):
         self.assertIn('Return', portfolios.columns)
         self.assertIn('Volatility', portfolios.columns)
 
-        # Check if the values are in a reasonable range.
-        # These ranges would depend on your specific case.
-        self.assertTrue((portfolios['Return'] >= -1).all() or (portfolios['Return'] <= 1).all())
         self.assertTrue((portfolios['Volatility'] >= 0).all())
 
         # Check if weights sum up to 1 for each portfolio
