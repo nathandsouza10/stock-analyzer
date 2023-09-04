@@ -48,4 +48,5 @@ Then navigate to http://localhost:8501/ in your browser.
 5. ## Live Demo
 
 Visit [Stock Reviewer](https://stockreviewer.streamlit.app/) to see the live demo of the application.
-
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/671cde86-0e84-457f-8eb4-04f4c7ae4222)
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/f7ea1bd3-2f8f-4f66-9e8d-e4db6c5f5395)
