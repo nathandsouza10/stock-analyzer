@@ -26,7 +26,7 @@ def get_daily_stock_data(tickers):
 def get_monthly_stock_data(tickers):
     today = datetime.today().strftime('%Y-%m-%d')
     data = yf.download(tickers, start="2007-01-01", end=today, interval='1mo')
-    return data['Close'].dropna()  # dropna to remove any NaN values
+    return data['Close'].dropna()
 
 
 def get_modern_portfolio(stocks_list):
