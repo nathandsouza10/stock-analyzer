@@ -11,7 +11,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from datetime import timedelta
 import pandas as pd
-from sklearn.model_selection import GridSearchCV
 
 device = get_device()
 
@@ -23,11 +22,31 @@ torch.manual_seed(42)
 random.seed(42)
 
 st.title("Stock Analyzer")
-with st.expander("Menu", expanded=True):
+# Create three columns
+col1, col2 = st.columns(2)
+
+# Left column for the line chart
+with col1:
     STOCKS = st.multiselect(
         'Please Choose stocks:',
         ['AAPL', 'MSFT', 'GOOGL', 'NFLX'],
         ['AAPL', 'MSFT', 'GOOGL', 'NFLX'])
+
+# Middle column for the future prices DataFrame
+with col2:
+    st.write("Market Cap.")
+    # Fetch the market cap for each ticker
+    market_caps = {}
+    for ticker in STOCKS:
+        stock = yf.Ticker(ticker)
+        market_caps[ticker] = stock.info["marketCap"]
+
+    # Convert the market_caps dictionary to a pandas DataFrame
+    df = pd.DataFrame(list(market_caps.items()), columns=['Ticker', 'Market Cap'])
+
+    # Make the 'Ticker' column the index
+    df.set_index('Ticker', inplace=True)
+    st.bar_chart(df)
 
 bars = get_daily_stock_data(STOCKS)
 
@@ -179,6 +198,7 @@ models = [
     ('KNN', KNeighborsRegressor(), param_grid_knn),
     ('DecisionTree', DecisionTreeRegressor(), param_grid_dt)
 ]
+
 model_performance_dict = {}
 for ticker in STOCKS:
     with st.spinner(f"Performing time series analysis for: {ticker}"):
