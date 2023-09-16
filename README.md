@@ -23,7 +23,7 @@ This Streamlit application serves as a comprehensive tool for stock analysis. It
 ## Usage
 
 Run the Streamlit application.
-streamlit run app.py
+streamlit run main.py
 Then navigate to http://localhost:8501/ in your browser.
 
 ## How it works
