@@ -14,7 +14,7 @@ This Streamlit application serves as a comprehensive tool for stock analysis. It
 ## Installation
 
 1. Clone the repository.
-    git clone https://github.com/your-repo/stock-analyzer.git
+    git clone https://github.com/nathandsouza10/stock-analyzer.git
 2. Navigate to the project directory.
     cd stock-analyzer
 3. Install the required packages.
