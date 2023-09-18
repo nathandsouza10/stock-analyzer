@@ -34,7 +34,7 @@ with col1:
 
 # Middle column for the future prices DataFrame
 with col2:
-    st.write("Market Cap.")
+    st.write("Market Cap. ratio")
     # Fetch the market cap for each ticker
     market_caps = {}
     for ticker in STOCKS:
@@ -44,9 +44,15 @@ with col2:
     # Convert the market_caps dictionary to a pandas DataFrame
     df = pd.DataFrame(list(market_caps.items()), columns=['Ticker', 'Market Cap'])
 
-    # Make the 'Ticker' column the index
-    df.set_index('Ticker', inplace=True)
-    st.bar_chart(df)
+    # Create a pie chart using altair
+    pie_chart = alt.Chart(df).mark_arc(innerRadius=50, outerRadius=150).encode(
+        theta='Market Cap:Q',
+        color='Ticker:N',
+        tooltip=['Ticker', 'Market Cap']
+    )
+
+    # Display the pie chart using streamlit
+    st.altair_chart(pie_chart)
 
 bars = get_daily_stock_data(STOCKS)
 
@@ -98,7 +104,7 @@ with st.spinner("Loading..."):
                 'close'] > 0 and not already_bought and not already_sold:
                 shares_bought = cash // row['close']  # Buy as many shares as you can
                 cash -= shares_bought * row['close']  # Update your cash after buying
-                shares_owned += shares_bought  # Update your total shares owned
+                shares_owned += shares_bought  # Update your total shares aowned
                 price.at[i, 'buy/sell'] = 'Buy'
                 already_bought = True  # set the flag to true after buying
 
