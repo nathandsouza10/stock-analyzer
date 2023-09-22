@@ -1,5 +1,5 @@
 import random
-from utils import *
+from utils import get_device, get_daily_stock_data, get_monthly_stock_data, get_modern_portfolio, split_data, get_model_performance
 import altair as alt
 from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
 from sklearn.svm import SVR
