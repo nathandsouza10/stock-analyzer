@@ -11,6 +11,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from datetime import timedelta
 import pandas as pd
+import yfinance as yf
 
 device = get_device()
 
