@@ -11,8 +11,13 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from datetime import timedelta
 import pandas as pd
+import torch
+import numpy as np
+from datetime import datetime
+import pandas as pd
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import mean_squared_error
 import yfinance as yf
-
 device = get_device()
 
 st.set_page_config(layout="wide")
