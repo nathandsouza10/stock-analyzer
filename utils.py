@@ -1,10 +1,10 @@
 import numpy as np
-import yfinance as yf
 from datetime import datetime
 import pandas as pd
 import torch
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error
+import yfinance as yf
 
 
 def get_device():
