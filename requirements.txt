@@ -4,6 +4,6 @@ numpy
 scikit-learn
 torch
 streamlit
-yfinance==0.2.22
+yfinance==0.2.29
 pytest
 pytest-mock
