@@ -52,6 +52,7 @@ with col2:
     st.altair_chart(pie_chart)
 
 bars = get_daily_stock_data(STOCKS)
+st.write(bars)
 
 st.subheader("Modern Portfolio Theory")
 with st.spinner("Loading..."):
