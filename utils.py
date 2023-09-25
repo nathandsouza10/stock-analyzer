@@ -23,6 +23,13 @@ def get_daily_stock_data(tickers):
     return data['Close'].dropna()
 
 
+def get_pe_ratios(tickers):
+    pe_ratios = {}
+    for ticker in tickers:
+        stock = yf.Ticker(ticker)
+        pe_ratios[ticker] = stock.info.get('trailingPE', None)
+    return pe_ratios
+
 def get_monthly_stock_data(tickers):
     today = datetime.today().strftime('%Y-%m-%d')
     data = yf.download(tickers, start="2007-01-01", end=today, interval='1mo')
