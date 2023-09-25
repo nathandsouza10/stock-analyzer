@@ -250,18 +250,11 @@ for ticker in STOCKS:
 
         st.write(f"{ticker}")
 
-        # Create three columns
         col1, col2, col3 = st.columns(3)
-
-        # Left column for the line chart
         with col1:
             st.line_chart(combined_df)
-
-        # Middle column for the future prices DataFrame
         with col2:
             st.dataframe(future_df, use_container_width=True)
-
-        # Right column for model performance
         with col3:
             st.write(f"Best Model: {best_model.__class__.__name__}")
             st.write(f"Mean Squared Error: {mean_squared_error(y_test, best_model.predict(X_test))}")
