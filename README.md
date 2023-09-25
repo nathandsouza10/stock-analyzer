@@ -45,5 +45,5 @@ Then navigate to http://localhost:8501/ in your browser.
 3. Future prices are predicted using the best-performing model.
 4. Displays the future price predictions in a line chart along with the historical prices.
 
-![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/9b6e544e-ceb7-49e4-9148-bade4f142fb8)
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/d08b7b35-1ca0-4c34-a7b9-23d6dc9cab2d)
 ![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/c4d7ea10-cf43-4ca2-8a55-d497fd5c5ee2)
