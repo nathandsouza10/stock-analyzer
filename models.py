@@ -18,9 +18,10 @@ class LSTM(nn.Module):
         )
 
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_().to(device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).requires_grad_().to(device)
-        out, (hn, cn) = self.lstm(x, (h0.detach(), c0.detach()))
+        # Reshape input to have a sequence length of 1
+        x = x.view(x.size(0), 1, -1)
+        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(device)
+        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim).to(device)
+        out, (hn, cn) = self.lstm(x, (h0, c0))
         out = self.fc(out[:, -1, :])
         return out
-
