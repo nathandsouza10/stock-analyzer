@@ -44,7 +44,7 @@ else:
         market_caps = {}
         for ticker in STOCKS:
             stock = yf.Ticker(ticker)
-            market_caps[ticker] = stock.info["marketCap"]
+            market_caps[ticker] = stock.fast_info["marketCap"]
         df = pd.DataFrame(list(market_caps.items()), columns=['Ticker', 'Market Cap'])
         pie_chart = alt.Chart(df).mark_arc(innerRadius=50, outerRadius=150).encode(
             theta='Market Cap:Q',
@@ -54,16 +54,16 @@ else:
         st.altair_chart(pie_chart)
 
     with col3:
-        # Call the get_pe_ratios function
-        pe_values = get_pe_ratios(STOCKS)
-        pe_df = pd.DataFrame(list(pe_values.items()), columns=['Ticker', 'P/E Ratio'])
-        st.write("P/E Ratios")
-        horizontal_bar_chart = alt.Chart(pe_df).mark_bar().encode(
+        # Call the get_fiftyDayAverage function
+        fifty_day_avg_values = get_fiftyDayAverage(STOCKS)
+        fifty_day_avg_df = pd.DataFrame(list(fifty_day_avg_values.items()), columns=['Ticker', '50 Day Avg'])
+        st.write("50 Day Moving Averages")
+        horizontal_bar_chart = alt.Chart(fifty_day_avg_df).mark_bar().encode(
             y='Ticker:N',  # Set y-axis to Ticker
-            x='P/E Ratio:Q',  # Set x-axis to P/E Ratio
-            tooltip=['Ticker', 'P/E Ratio'],
+            x='50 Day Avg:Q',  # Set x-axis to 50 Day Avg
+            tooltip=['Ticker', '50 Day Avg'],
             color='Ticker:N'
-        ).properties(title="P/E Ratios Comparison")
+        ).properties(title="50 Day Moving Average Comparison")
         st.altair_chart(horizontal_bar_chart, use_container_width=True)
 
     bars = get_daily_stock_data(STOCKS)

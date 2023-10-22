@@ -23,12 +23,14 @@ def get_daily_stock_data(tickers):
     return data['Close'].dropna()
 
 
-def get_pe_ratios(tickers):
-    pe_ratios = {}
-    for ticker in tickers:
-        stock = yf.Ticker(ticker)
-        pe_ratios[ticker] = stock.info.get('trailingPE', None)
-    return pe_ratios
+def get_fiftyDayAverage(stocks):
+    fifty_day_avg_values = {}
+    for stock in stocks:
+        ticker = yf.Ticker(stock)
+        info = ticker.fast_info
+        fifty_day_avg = info.get('fiftyDayAverage', 'N/A')
+        fifty_day_avg_values[stock] = fifty_day_avg
+    return fifty_day_avg_values
 
 def get_monthly_stock_data(tickers):
     today = datetime.today().strftime('%Y-%m-%d')
