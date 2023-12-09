@@ -1,15 +1,9 @@
+import torch
+import torch.nn as nn
 import random
 import altair as alt
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
-from sklearn.svm import SVR
-from sklearn.neighbors import KNeighborsRegressor
-from sklearn.tree import DecisionTreeRegressor
 import streamlit as st
-from parameters import *
-from PytorchWrapper import PyTorchWrapper
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
-from datetime import timedelta
+from sklearn.preprocessing import MinMaxScaler
 from utils import *
 
 device = get_device()
@@ -23,7 +17,6 @@ random.seed(42)
 
 st.title("Stock Analyzer")
 
-# Create three columns
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -67,7 +60,6 @@ else:
         st.altair_chart(horizontal_bar_chart, use_container_width=True)
 
     bars = get_daily_stock_data(STOCKS)
-
     st.subheader("Modern Portfolio Theory")
     if len(STOCKS) == 1:
         st.warning("Modern Portfolio Theory could not be processed as only one stock is selected")
@@ -98,120 +90,114 @@ else:
                 ).interactive()
                 st.altair_chart(chart, theme="streamlit", use_container_width=True)
 
-    st.subheader("Moving Average Analysis (200 day)")
-    cash_init = st.number_input("Enter Cash Invested", value=1000)
-    with st.spinner("Loading..."):
-        risk_df = pd.DataFrame(index=STOCKS, columns=['final_portfolio_value', 'profit/loss'])
-        for option in STOCKS:
-            if len(STOCKS) == 1:
-                data = bars
-            else:
-                data = bars[option]
-            price = data.reset_index(drop=True).to_frame(name='close')
-            price['200day(MA)'] = price.rolling(window=200).mean()
-            price['buy/sell'] = 'Hold'  # default action is to hold
-            cash = cash_init
-            shares_owned = 0
-            already_bought = False  # flag to check if you've already bought shares
-            already_sold = False  # flag to check if you've already sold shares
-
-            for i, row in price.iterrows():
-                # Check if the close price is greater than the 200-day MA, you haven't bought any shares yet,
-                # and you haven't already sold.
-                if row['close'] > row['200day(MA)'] and cash > 0 and row[
-                    'close'] > 0 and not already_bought and not already_sold:
-                    shares_bought = cash // row['close']  # Buy as many shares as you can
-                    cash -= shares_bought * row['close']  # Update your cash after buying
-                    shares_owned += shares_bought  # Update your total shares aowned
-                    price.at[i, 'buy/sell'] = 'Buy'
-                    already_bought = True  # set the flag to true after buying
-
-                # If the close price falls below the 200-day MA, you own shares, and you haven't already sold.
-                elif row['close'] < row['200day(MA)'] and shares_owned > 0 and not already_sold:
-                    cash += shares_owned * row['close']  # Sell all your shares
-                    shares_owned = 0  # Reset shares owned to zero
-                    price.at[i, 'buy/sell'] = 'Sell'
-                    already_sold = True  # set the flag to true after selling
-
-            # Assuming you sell all the shares at the last available price if you still have any
-            final_portfolio_value = shares_owned * price.iloc[-1]['close'] + cash
-            profit_loss = final_portfolio_value - cash_init
-            percentage_increase = ((final_portfolio_value - cash_init) / cash_init) * 100
-
-            risk_df.at[option, 'final_portfolio_value'] = final_portfolio_value
-            risk_df.at[option, 'profit/loss'] = profit_loss
-            risk_df.at[option, 'percentage_change'] = percentage_increase
-
-        risk_df = risk_df.sort_values(by='final_portfolio_value', ascending=False)
-        st.dataframe(risk_df, use_container_width=True, column_config={
-            "percentage_increase": st.column_config.NumberColumn(format="%d%%")
-        })
 
     st.subheader("Stock Time Series Analysis")
+    st.subheader("LSTM")
+    from LSTM import LSTM
 
-    models = [
-        ('RandomForest', RandomForestRegressor(), param_grid_rf),
-        ('GradientBoosting', GradientBoostingRegressor(), param_grid_gb),
-        ('LinearRegression', LinearRegression(), param_grid_lr),
-        ('Ridge', Ridge(), param_grid_ridge),
-        ('Lasso', Lasso(), param_grid_lasso),
-        ('ElasticNet', ElasticNet(), param_grid_en),
-        ('SVR', SVR(), param_grid_svr),
-        ('KNN', KNeighborsRegressor(), param_grid_knn),
-        ('DecisionTree', DecisionTreeRegressor(), param_grid_dt),
-        ("LSTM", PyTorchWrapper(input_dim=3, hidden_dim=64, num_layers=2, output_dim=1), param_grid_lstm)
-    ]
-
-    model_performance_dict = {}
-    for ticker in STOCKS:
-        with st.spinner(f"Performing time series analysis for: {ticker}"):
-            series = get_monthly_stock_data(ticker)
-            df = series.reset_index()
-            df.columns = ['Date', 'Price']
-            df['Date'] = pd.to_datetime(df['Date'])
-
-            df['Year'] = df['Date'].dt.year
-            df['Month'] = df['Date'].dt.month
-            df['Day_Delta'] = (df['Date'] - df['Date'].min()).dt.days
-
-            X = df[['Year', 'Month', 'Day_Delta']].values
-            y = df['Price'].values
-
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-            best_model = get_model_performance(X_train, y_train, X_test, y_test, models)
-            model_performance_dict[ticker] = {
-                'Best Model': best_model.__class__.__name__,
-                'MSE': mean_squared_error(y_test, best_model.predict(X_test))
-            }
+    # Function to create sequences
+    def create_sequences(data, seq_length):
+        xs, ys = [], []
+        for i in range(len(data) - seq_length):
+            x = data[i:(i + seq_length)]
+            y = data[i + seq_length]
+            xs.append(x)
+            ys.append(y)
+        return np.array(xs), np.array(ys)
 
 
-            def estimate_price(input_date):
-                year = input_date.year
-                month = input_date.month
-                day_delta = (input_date - df['Date'].min()).days
-                return best_model.predict([[year, month, day_delta]])[0]
+    # Function for predicting future values
+    def predict_next_days(model, last_sequence, days=5):
+        future_predictions = []
+        for _ in range(days):
+            with torch.no_grad():
+                last_sequence_tensor = torch.tensor(last_sequence.reshape(1, seq_length, -1), dtype=torch.float32).to(
+                    device)
+                pred = model(last_sequence_tensor).cpu().numpy()
+                future_predictions.append(pred[0][0])
+                last_sequence = np.append(last_sequence[1:], pred[0])
+        return future_predictions
 
+    input_dim = 1
+    output_dim = 1
+    with st.form(key='my_form'):
+        st.subheader("Set Hyperparameters")
+        seq_length = st.number_input('Sequence Length', min_value=1, value=40)
+        hidden_dim = st.number_input('Hidden Dimension', min_value=1, value=50)
+        num_layers = st.number_input('Number of Layers', min_value=1, value=4)
+        num_epochs = st.number_input('Number of Epochs', min_value=1, value=500)
+        learning_rate = st.number_input('Learning Rate', min_value=0.00001, max_value=0.01, value=0.001, step=0.00001,
+                                        format="%.5f")
 
-            future_dates = [df['Date'].iloc[-1]] + [df['Date'].iloc[-1] + timedelta(days=i * 30) for i in range(1, 12)]
-            future_prices = [estimate_price(date) for date in future_dates]
+        submit_button = st.form_submit_button(label='Submit')
 
-            future_df = pd.DataFrame({
-                'Date': future_dates,
-                'Estimated Prices': future_prices
-            })
+    # Iterate through each stock
+    for stock in bars:
+        stock_data = bars[stock]
 
-            combined_df = pd.DataFrame({
-                'Historical': df.set_index('Date')['Price'],
-                'Future': future_df.set_index('Date')['Estimated Prices']
-            })
+        # Data preparation
+        data = stock_data.values.reshape(-1, 1)
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        data_scaled = scaler.fit_transform(data)
+        X, y = create_sequences(data_scaled, seq_length)
+        X_train, y_train = torch.tensor(X, dtype=torch.float32).to(device), torch.tensor(y, dtype=torch.float32).to(
+            device)
 
-            st.write(f"{ticker}")
+        # Model initialization
+        model = LSTM(input_dim, hidden_dim, num_layers, output_dim)
+        model.to(device)
+        model = nn.DataParallel(model)
 
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.line_chart(combined_df)
-            with col2:
-                st.dataframe(future_df, use_container_width=True)
-            with col3:
-                st.write(f"Best Model: {best_model.__class__.__name__}")
-                st.write(f"Mean Squared Error: {mean_squared_error(y_test, best_model.predict(X_test))}")
+        # Loss and optimizer
+        criterion = nn.MSELoss()
+        optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+        # List to store loss values
+        epoch_losses = []
+
+        # Training the model
+        for epoch in range(num_epochs):
+            model.train()
+            outputs = model(X_train)
+            optimizer.zero_grad()
+            loss = criterion(outputs, y_train)
+            loss.backward()
+            optimizer.step()
+
+            epoch_losses.append(loss.item())
+
+            if epoch % 10 == 0:
+                print(f'Stock: {stock}, Epoch [{epoch}/{num_epochs}], Loss: {loss.item()}')
+
+        # Predict the next 5 days
+        last_sequence = data_scaled[-seq_length:]
+        predictions_scaled = predict_next_days(model, last_sequence, days=5)
+        predictions = scaler.inverse_transform(np.array(predictions_scaled).reshape(-1, 1)).flatten()
+
+        # Preparing data for plotting
+        stock_data.index = pd.to_datetime(stock_data.index)
+        last_date = pd.to_datetime(stock_data.index[-1])
+        start_date = last_date + pd.Timedelta(days=1)
+        prediction_dates = pd.date_range(start=start_date, periods=5)
+        predictions_series = pd.Series(predictions, index=prediction_dates)
+
+        # Combine actual and predicted data
+        combined_data = pd.concat([stock_data[-120:], predictions_series.rename('Prediction')], axis=1)
+
+        # Create two columns for plots
+        col1, col2, col3 = st.columns(3)
+
+        # Plot using Streamlit in the first column
+        with col1:
+            st.write(f'Stock Data and Predictions for {stock}')
+            st.line_chart(combined_data)
+
+        # Plot the loss per epoch in the second column
+        with col2:
+            st.write('Training Loss per Epoch')
+            st.line_chart(pd.Series(epoch_losses, name='Loss'))
+        # Plot the loss per epoch in the second column
+        with col3:
+            st.write('prediction series')
+            st.write(predictions_series)
+

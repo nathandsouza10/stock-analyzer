@@ -109,10 +109,12 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
 # Spyder project settings
 .spyderproject
 .spyproject
+
+#pycharm project settings
+.idea
 
 # Rope project settings
 .ropeproject
