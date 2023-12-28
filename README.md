@@ -6,10 +6,10 @@ This Streamlit application serves as a comprehensive tool for stock analysis. It
 
 ## Features
 
-1. **Stock Selection:** Choose from a list of available stocks (AAPL, MSFT, GOOGL, NFLX).
+1. **Stock Selection:** Choose from a list of available stocks.
 2. **Modern Portfolio Theory Analysis:** Get the most efficient portfolio with minimum volatility.
-3. **Moving Average Analysis:** Buy/Sell signal generation based on 200-day moving average.
-4. **Stock Time Series Analysis:** Future price predictions based on multiple machine learning models like Random Forest, Gradient Boosting, Linear Regression, and more.
+3. **Moving Average Analysis:** Buy/Sell signal generation based on 50-day moving average.
+4. **Stock Time Series Analysis:** Future price predictions based on LSTM model.
 
 ## Installation
 
@@ -45,5 +45,5 @@ Then navigate to http://localhost:8501/ in your browser.
 3. Future prices are predicted using the best-performing model.
 4. Displays the future price predictions in a line chart along with the historical prices.
 
-![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/d08b7b35-1ca0-4c34-a7b9-23d6dc9cab2d)
-![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/c4d7ea10-cf43-4ca2-8a55-d497fd5c5ee2)
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/6ec01353-a86e-4655-afc7-0212219bb23c)
+![image](https://github.com/nathandsouza10/stock-analyzer/assets/85251596/46fe8671-1a1c-4124-a3a1-7f97520fe05b)
