@@ -22,8 +22,8 @@ col1, col2, col3 = st.columns(3)
 with col1:
     STOCKS = st.multiselect(
         'Please Choose stocks:',
-        ['AAPL', 'MSFT', 'GOOGL', 'NFLX'],
-        ['AAPL', 'MSFT', 'GOOGL', 'NFLX'])
+        ["AAPL", "MSFT", "GOOGL", "NFLX", "AMZN", "TSLA"],
+        ["AAPL", "MSFT", "GOOGL", "NFLX", "AMZN", "TSLA"])
 
 # Check if any stocks are selected
 if not STOCKS:
@@ -182,7 +182,7 @@ else:
         predictions_series = pd.Series(predictions, index=prediction_dates)
 
         # Combine actual and predicted data
-        combined_data = pd.concat([stock_data[-120:], predictions_series.rename('Prediction')], axis=1)
+        combined_data = pd.concat([stock_data[-30:], predictions_series.rename('Prediction')], axis=1)
 
         # Create two columns for plots
         col1, col2, col3 = st.columns(3)
