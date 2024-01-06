@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-device = ('cuda' if torch.cuda.is_available() else 'cpu')
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class LSTM(nn.Module):
@@ -15,7 +16,7 @@ class LSTM(nn.Module):
             nn.Tanh(),
             nn.Linear(hidden_dim // 2, hidden_dim // 4),
             nn.ReLU(),
-            nn.Linear(hidden_dim // 4, output_dim)
+            nn.Linear(hidden_dim // 4, output_dim),
         )
 
     def forward(self, x):

@@ -12,15 +12,16 @@ def get_device():
         return torch.device("cuda")
     try:
         import torch_directml  # Importing this to check if it's installed and available
+
         return torch_directml.device()
     except ImportError:
         return torch.device("cpu")
 
 
 def get_daily_stock_data(tickers):
-    today = datetime.today().strftime('%Y-%m-%d')
+    today = datetime.today().strftime("%Y-%m-%d")
     data = yf.download(tickers, start="2007-01-01", end=today)
-    return data['Close'].dropna()
+    return data["Close"].dropna()
 
 
 def get_fiftyDayAverage(stocks):
@@ -28,21 +29,24 @@ def get_fiftyDayAverage(stocks):
     for stock in stocks:
         ticker = yf.Ticker(stock)
         info = ticker.fast_info
-        fifty_day_avg = info.get('fiftyDayAverage', 'N/A')
+        fifty_day_avg = info.get("fiftyDayAverage", "N/A")
         fifty_day_avg_values[stock] = fifty_day_avg
     return fifty_day_avg_values
 
+
 def get_monthly_stock_data(tickers):
-    today = datetime.today().strftime('%Y-%m-%d')
-    data = yf.download(tickers, start="2007-01-01", end=today, interval='1mo')
-    return data['Close'].dropna()
+    today = datetime.today().strftime("%Y-%m-%d")
+    data = yf.download(tickers, start="2007-01-01", end=today, interval="1mo")
+    return data["Close"].dropna()
 
 
 def get_modern_portfolio(stocks_list):
     cycles = 252  # number of stock trading days in a year
 
     daily_stock_data = get_daily_stock_data(stocks_list)
-    closing_price_df = pd.DataFrame({stock: daily_stock_data[stock] for stock in stocks_list})
+    closing_price_df = pd.DataFrame(
+        {stock: daily_stock_data[stock] for stock in stocks_list}
+    )
 
     log_returns = np.log(closing_price_df / closing_price_df.shift(1))
 
@@ -54,11 +58,15 @@ def get_modern_portfolio(stocks_list):
     weights = weights / np.sum(weights, axis=1)[:, np.newaxis]
 
     # Calculate expected returns and volatilities for all portfolios
-    expected_returns = np.sum(weights * log_returns.mean().values[np.newaxis, :], axis=1) * cycles
+    expected_returns = (
+        np.sum(weights * log_returns.mean().values[np.newaxis, :], axis=1) * cycles
+    )
     cov_matrix = log_returns.cov().values
-    volatilities = np.sqrt(np.einsum('ij,jk,ik->i', weights, cov_matrix * cycles, weights))
+    volatilities = np.sqrt(
+        np.einsum("ij,jk,ik->i", weights, cov_matrix * cycles, weights)
+    )
 
-    portfolios = pd.DataFrame({'Return': expected_returns, 'Volatility': volatilities})
+    portfolios = pd.DataFrame({"Return": expected_returns, "Volatility": volatilities})
     return portfolios, weights
 
 
@@ -68,7 +76,7 @@ def split_data(stock, lookback, test_size=0.2):
 
     # create all possible sequences of length lookback
     for index in range(len(data_raw) - lookback):
-        sequence = data_raw[index: index + lookback]
+        sequence = data_raw[index : index + lookback]
 
         # Check for NaN values in the sequence
         if not np.any(np.isnan(sequence)):
@@ -89,7 +97,7 @@ def split_data(stock, lookback, test_size=0.2):
 
 def get_model_performance(X_train, y_train, X_test, y_test, models):
     best_model = None
-    best_mse = float('inf')
+    best_mse = float("inf")
 
     for name, model, param_grid in models:
         grid_search = GridSearchCV(model, param_grid, cv=3, n_jobs=-1)
